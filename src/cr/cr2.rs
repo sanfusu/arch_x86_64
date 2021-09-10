@@ -11,11 +11,7 @@ impl Cr2 {
     #[inline]
     pub unsafe fn buffer() -> Cr2Buffer {
         let mut x;
-        #[cfg(target_arch = "x86")]
-        asm!("mov {:e}, cr2", out(reg) x);
-
-        #[cfg(target_arch = "x86_64")]
-        asm!("mov {:r}, cr2", out(reg) x);
+        asm!("mov {}, cr2", out(reg) x);
         Cr2Buffer { data: x }
     }
 }
@@ -26,11 +22,7 @@ pub struct Cr2Buffer {
 }
 impl Cr2Buffer {
     pub unsafe fn flush(&mut self) {
-        #[cfg(target_arch = "x86")]
-        asm!("mov cr2, {:e}", in(reg) self.data);
-
-        #[cfg(target_arch = "x86_64")]
-        asm!("mov cr2, {:r}", in(reg) self.data);
+        asm!("mov cr2, {}", in(reg) self.data);
     }
 }
 impl BufferWriter for Cr2Buffer {

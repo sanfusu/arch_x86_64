@@ -5,12 +5,7 @@ impl Cr3 {
     #[inline]
     pub unsafe fn buffer() -> Cr3Buffer {
         let mut x;
-        #[cfg(target_arch = "x86")]
-        asm!("mov {:e}, cr3", out(reg) x);
-
-        #[cfg(target_arch = "x86_64")]
-        asm!("mov {:r}, cr3", out(reg) x);
-
+        asm!("mov {}, cr3", out(reg) x);
         Cr3Buffer { data: x }
     }
 }
@@ -22,11 +17,7 @@ pub struct Cr3Buffer {
 impl Cr3Buffer {
     #[inline]
     pub unsafe fn flush(&mut self) {
-        #[cfg(target_arch = "x86")]
-        asm!("mov cr3, {:e}", in(reg) self.data);
-
-        #[cfg(target_arch = "x86_64")]
-        asm!("mov cr3, {:r}", in(reg) self.data);
+        asm!("mov cr3, {}", in(reg) self.data);
     }
 }
 impl BufferWriter for Cr3Buffer {

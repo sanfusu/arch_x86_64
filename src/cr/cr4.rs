@@ -9,22 +9,14 @@ impl Cr4 {
     #[inline]
     pub unsafe fn buffer() -> Cr4Buffer {
         let mut x;
-        #[cfg(target_arch = "x86")]
-        asm!("mov {:e}, cr4", out(reg) x);
-
-        #[cfg(target_arch = "x86_64")]
-        asm!("mov {:r}, cr4", out(reg) x);
+        asm!("mov {}, cr4", out(reg) x);
         Cr4Buffer { data: x }
     }
 }
 impl Cr4Buffer {
     #[inline]
     pub unsafe fn flush(&mut self) {
-        #[cfg(target_arch = "x86")]
-        asm!("mov cr4, {:e}", in(reg) self.data);
-
-        #[cfg(target_arch = "x86_64")]
-        asm!("mov cr4, {:r}", in(reg) self.data);
+        asm!("mov cr4, {}", in(reg) self.data);
     }
 }
 
