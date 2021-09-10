@@ -8,9 +8,14 @@ pub struct Cr2;
 
 impl Cr2 {
     /// 需要确保当前为 legacy 模式
+    #[inline]
     pub unsafe fn buffer() -> Cr2Buffer {
         let mut x;
-        crx_buffer!(cr2, x);
+        #[cfg(target_arch = "x86")]
+        asm!("mov {:e}, cr2", out(reg) x);
+
+        #[cfg(target_arch = "x86_64")]
+        asm!("mov {:r}, cr2", out(reg) x);
         Cr2Buffer { data: x }
     }
 }
@@ -21,7 +26,11 @@ pub struct Cr2Buffer {
 }
 impl Cr2Buffer {
     pub unsafe fn flush(&mut self) {
-        crx_flush!(cr2, self.data);
+        #[cfg(target_arch = "x86")]
+        asm!("mov cr2, {:e}", in(reg) self.data);
+
+        #[cfg(target_arch = "x86_64")]
+        asm!("mov cr2, {:r}", in(reg) self.data);
     }
 }
 impl BufferWriter for Cr2Buffer {

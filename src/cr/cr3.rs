@@ -2,9 +2,15 @@ use bits::field::{BufferReader, BufferWriter};
 
 pub struct Cr3;
 impl Cr3 {
+    #[inline]
     pub unsafe fn buffer() -> Cr3Buffer {
         let mut x;
-        crx_buffer!(cr3, x);
+        #[cfg(target_arch = "x86")]
+        asm!("mov {:e}, cr3", out(reg) x);
+
+        #[cfg(target_arch = "x86_64")]
+        asm!("mov {:r}, cr3", out(reg) x);
+
         Cr3Buffer { data: x }
     }
 }
@@ -14,8 +20,13 @@ pub struct Cr3Buffer {
 }
 
 impl Cr3Buffer {
+    #[inline]
     pub unsafe fn flush(&mut self) {
-        crx_flush!(cr3, self.data);
+        #[cfg(target_arch = "x86")]
+        asm!("mov cr3, {:e}", in(reg) self.data);
+
+        #[cfg(target_arch = "x86_64")]
+        asm!("mov cr3, {:r}", in(reg) self.data);
     }
 }
 impl BufferWriter for Cr3Buffer {
@@ -88,9 +99,7 @@ pub mod fields {
     bits::fields! {
         super::Cr3Buffer [data] {
             TBAPAE [5..=31, rw, usize],
-            TBA [12..=31,  rw, usize] ,
-            PCD [4, rw, bool],
-            PWT [3, rw, bool]
+            TBA [12..=31,  rw, usize]
         }
     }
 
@@ -98,9 +107,13 @@ pub mod fields {
     bits::fields! {
         super::Cr3Buffer [data] {
             TBA [12..=51, rw, usize],
+            PCID [0..=11, rw, u16]
+        }
+    }
+    bits::fields! {
+        super::Cr3Buffer [data] {
             PCD [4, rw, bool],
-            PWT [3, rw, bool],
-            PCID [0..=11, rw, usize]
+            PWT [3, rw, bool]
         }
     }
 }
