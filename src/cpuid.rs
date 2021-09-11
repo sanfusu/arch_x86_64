@@ -1,6 +1,6 @@
 use core::marker::PhantomData;
 
-use bits::field::BufferWriter;
+use bits::field::{BufferReader, BufferWriter};
 
 use crate::cr::flags::{fields, Flags};
 
@@ -23,9 +23,8 @@ impl Cpuid {
     #[inline]
     pub unsafe fn inst() -> Option<Self> {
         let mut flags = Flags::buffer();
-        let prev_flags = flags;
         flags.revert::<fields::ID>().flush();
-        if prev_flags != Flags::buffer() {
+        if Flags::buffer().read::<fields::ID>() {
             Some(Self {
                 phantom: PhantomData,
             })
@@ -41,14 +40,14 @@ impl Cpuid {
         };
         unsafe {
             asm!(
-                "mov %ebx, {0:e}",
+                "mov ebx, {0:e}",
                 "cpuid",
-                "xchg %ebx, {0:e}",
+                "xchg ebx, {0:e}",
                 lateout(reg) ret.ebx,
                 inlateout("eax") leaf => ret.eax,
                 inlateout("ecx") sub_leaf => ret.ecx,
                 lateout("edx") ret.edx,
-                options(nostack, preserves_flags, att_syntax),
+                options(nostack, preserves_flags),
             );
         }
         ret
