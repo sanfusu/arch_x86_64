@@ -1,9 +1,5 @@
 use core::marker::PhantomData;
 
-use bits::field::{BufferReader, BufferWriter};
-
-use crate::cr::flags::{fields, Flags};
-
 #[derive(Debug, Default)]
 pub struct CpuidResult {
     pub eax: u32,
@@ -22,14 +18,29 @@ impl Cpuid {
     /// ⚠️ 由于内部使用了 `popf` 指令，那么在 virtual-8086 模式下，如果 `IOPL` 字段小于 3，且 `CR4.VME` 没有使能，使用本函数则会导致 #GP 异常。
     #[inline]
     pub unsafe fn inst() -> Option<Self> {
-        let mut flags = Flags::buffer();
-        flags.revert::<fields::ID>().flush();
-        if Flags::buffer().read::<fields::ID>() {
+        // flags 寄存器所有可编程的 bit 位初始值均为 0；
+        // 所以只要能置 1，或者其值已经为 1，均表明可以修改。
+        #[cfg(target_arch = "x86")]
+        {
+            use crate::cr::flags::{fields, Flags};
+            use bits::field::{BufferReader, BufferWriter};
+
+            let mut flags = Flags::buffer();
+            flags.write::<fields::ID>(true).flush();
+            if Flags::buffer().read::<fields::ID>() {
+                Some(Self {
+                    phantom: PhantomData,
+                })
+            } else {
+                None
+            }
+        }
+        // 64 bit CPU 均支持 CPUID 指令。
+        #[cfg(target_arch = "x86_64")]
+        {
             Some(Self {
                 phantom: PhantomData,
             })
-        } else {
-            None
         }
     }
     /// 根据功能号查询处理器信息和其特性。
