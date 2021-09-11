@@ -65,6 +65,16 @@ pub mod fields {
             DE          [03, rw, bool],
             TSD         [02, rw, bool],
             PVI         [01, rw, bool],
+            /// #  virtual-8086 模式扩展
+            /// Virtual-8086 Mode Extensions
+            ///
+            /// + 置 1 后，可以为运行在 virtual-8086 模式下的软件提供由硬件支撑的性能提升。
+            /// + 清 0 后，会禁用该提升。
+            /// 
+            /// 具体提升包括：
+            /// 
+            /// 1. 虚拟的、可屏蔽的、外部中断控制（Flags 寄存器中的 VIF、VIP 标签），以及几个可以操控 Flags.IF 位的指令。
+            /// 2. 通过使用 TSS 中的中断重定向 bitmap 来选择性的截断软件中断（INTn 指令）。
             VME         [00, rw, bool]
         }
     }

@@ -14,7 +14,7 @@ pub unsafe fn rdmsr(addr: u32) -> u64 {
         in("ecx") addr,
         options(pure, nomem, nostack),
     );
-    (low as u64)| ((high as u64) << 32)
+    (low as u64) | ((high as u64) << 32)
 }
 
 /// ## 写 model-specific 寄存器
