@@ -1,5 +1,3 @@
-use bits::field::{BufferReader, BufferWriter};
-
 pub struct Cr3;
 impl Cr3 {
     /// + legacy 模式下 Non-Pae 分页下的 CR3 寄存器读

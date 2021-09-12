@@ -1,5 +1,4 @@
-use bits::field::{BufferReader, BufferWriter};
-
+/// Cr4 寄存器除 PCE 位之外，其余 bit 使能前均可以使用 CPUID 指令来判断是否支持该特性。
 pub struct Cr4;
 pub struct Cr4Buffer {
     data: usize,
@@ -20,29 +19,7 @@ impl Cr4Buffer {
     }
 }
 
-impl BufferWriter for Cr4Buffer {
-    #[must_use = "The modified value works after flushed into register"]
-    fn write<T>(&mut self, value: T::ValueType) -> &mut Self
-    where
-        T: bits::field::Field<Self> + bits::field::FieldWriter<Self>,
-    {
-        T::write(self, value);
-        self
-    }
-}
-impl BufferReader for Cr4Buffer {
-    fn read<T: bits::field::Field<Self> + bits::field::FieldReader<Self>>(&self) -> T::ValueType {
-        T::read(self)
-    }
-
-    fn output<T: bits::field::Field<Self> + bits::field::FieldReader<Self>>(
-        &self,
-        out: &mut T::ValueType,
-    ) -> &Self {
-        *out = T::read(self);
-        self
-    }
-}
+impl_buffer_trait!(Cr4Buffer);
 
 pub mod fields {
     bits::fields_ex! {
@@ -70,9 +47,9 @@ pub mod fields {
             ///
             /// + 置 1 后，可以为运行在 virtual-8086 模式下的软件提供由硬件支撑的性能提升。
             /// + 清 0 后，会禁用该提升。
-            /// 
+            ///
             /// 具体提升包括：
-            /// 
+            ///
             /// 1. 虚拟的、可屏蔽的、外部中断控制（Flags 寄存器中的 VIF、VIP 标签），以及几个可以操控 Flags.IF 位的指令。
             /// 2. 通过使用 TSS 中的中断重定向 bitmap 来选择性的截断软件中断（INTn 指令）。
             VME         [00, rw, bool]

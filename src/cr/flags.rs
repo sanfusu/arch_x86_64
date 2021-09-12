@@ -1,5 +1,3 @@
-use bits::field::{BufferReader, BufferWriter};
-
 pub struct Flags;
 
 #[derive(PartialEq, Eq, Clone, Copy)]
@@ -116,16 +114,8 @@ impl FlagsBuffer {
         );
     }
 }
-impl BufferReader for FlagsBuffer {}
-impl BufferWriter for FlagsBuffer {
-    fn write<T>(&mut self, value: T::ValueType) -> &mut Self
-    where
-        T: bits::field::Field<Self> + bits::field::FieldWriter<Self>,
-    {
-        T::write(self, value);
-        self
-    }
-}
+
+impl_buffer_trait!(FlagsBuffer);
 
 pub mod fields {
     bits::fields_ex! {

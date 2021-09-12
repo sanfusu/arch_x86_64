@@ -18,6 +18,8 @@ impl SyscfgBuffer {
     }
 }
 
+impl_buffer_trait!(SyscfgBuffer);
+
 pub mod fields {
     bits::fields_ex! {
         super::SyscfgBuffer [data] {
