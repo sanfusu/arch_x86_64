@@ -15,7 +15,9 @@ pub struct Cpuid {
 impl Cpuid {
     /// 如果不支持 cpuid 指令，则返回 None，否则返回 Some。
     ///
-    /// ⚠️ 由于内部使用了 `popf` 指令，那么在 virtual-8086 模式下，如果 `IOPL` 字段小于 3，且 `CR4.VME` 没有使能，使用本函数则会导致 #GP 异常。
+    /// ⚠️ 在实模式和 virtual-8086 模式下无法通过本函数来获取 Cpuid 指令实例，并且可能会导致异常
+    /// （函数内使用了 popf 指令，virtual-8086 模式下可能会导致异常，
+    /// 详见 [`Flags::buffer`](crate::cr::flags::Flags::buffer)。
     #[inline]
     pub unsafe fn inst() -> Option<Self> {
         // flags 寄存器所有可编程的 bit 位初始值均为 0；

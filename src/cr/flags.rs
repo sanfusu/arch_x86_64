@@ -8,11 +8,38 @@ pub struct FlagsBuffer {
 }
 
 impl Flags {
+    /// 和 buffer 类似，但是可以在实模式（虚拟 8086 模式下调用）
+    /// 此时 flags 寄存器只有 16 bit。
+    #[inline]
+    #[cfg(target_arch = "x86")]
+    #[no_mangle]
+    pub unsafe fn real_buffer() -> FlagsBuffer {
+        let mut data: u16;
+        asm!(
+            "pushfw",
+            "pop {:x}",
+            out(reg)data,
+            options(nomem)
+        );
+        FlagsBuffer {
+            data: data as usize,
+        }
+    }
     /// 1. 你无法通过本函数来读取 VM 和 RF 标签
     /// 2. ⚠️ virtual-8086 模式下，如果 IOPL 字段小于 3，且 Cr4.VME 没有使能，使用本函数则会导致 #GP 异常。
+    ///
+    /// ⚠️ 实模式（包括虚拟 8086）下请调用 [`real_buffer`](Flags::real_buffer)。
     #[inline]
     pub unsafe fn buffer() -> FlagsBuffer {
         let mut data;
+        #[cfg(target_arch = "x86")]
+        asm!(
+            "pushfd",
+            "pop {}",
+            out(reg)data,
+            options(nomem)
+        );
+        #[cfg(target_arch = "x86_64")]
         asm!(
             "pushf",
             "pop {}",
@@ -58,14 +85,35 @@ impl Flags {
 impl FlagsBuffer {
     /// 1. 你无法通过本函数修改 VIP、VIF、VM 标签。
     /// 2. ⚠️  virtual-8086 模式下，如果 IOPL 字段小于 3，且 VME 没有使能，使用本函数则会导致 #GP 异常。
+    ///
+    /// ⚠️ 实模式（包括虚拟 8086）下请调用 [`real_flush`](FlagsBuffer::real_flush)。
     #[inline]
     pub unsafe fn flush(&mut self) {
+        #[cfg(target_arch = "x86")]
+        asm!(
+            "push {}",
+            "popfd",
+            in(reg) self.data,
+            options(nomem)
+        );
+        #[cfg(target_arch = "x86_64")]
         asm!(
             "push {}",
             "popf",
             in(reg) self.data,
             options(nomem)
-        )
+        );
+    }
+    /// 类似于 [`flush`](FlagsBUffer::flush)，但是可以在实模式下调用，需要注意实模式下 flags 寄存器只有 16 bit
+    #[inline]
+    #[cfg(target_arch = "x86")]
+    pub unsafe fn real_flush(&mut self) {
+        asm!(
+            "push {:x}",
+            "popfw",
+            in(reg) self.data,
+            options(nomem)
+        );
     }
 }
 impl BufferReader for FlagsBuffer {}
