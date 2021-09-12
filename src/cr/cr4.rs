@@ -24,24 +24,24 @@ impl_buffer_trait!(Cr4Buffer);
 pub mod fields {
     bits::fields_ex! {
         super::Cr4Buffer [data] {
-            CET         [23, rw, bool],
-            PKE         [22, rw, bool],
-            SMAP        [21, rw, bool],
-            SMEP        [20, rw, bool],
-            OSXSAVE     [18, rw, bool],
-            PCIDE       [17, rw, bool],
-            FSGSBASE    [16, rw, bool],
-            UMIP        [11, rw, bool],
-            OSXMMEXCPT  [10, rw, bool],
-            OSFXSR      [09, rw, bool],
-            PCE         [08, rw, bool],
-            PGE         [07, rw, bool],
-            MCE         [06, rw, bool],
-            PAE         [05, rw, bool],
-            PSE         [04, rw, bool],
-            DE          [03, rw, bool],
-            TSD         [02, rw, bool],
-            PVI         [01, rw, bool],
+            pub CET         [23, rw, bool],
+            pub PKE         [22, rw, bool],
+            pub SMAP        [21, rw, bool],
+            pub SMEP        [20, rw, bool],
+            pub OSXSAVE     [18, rw, bool],
+            pub PCIDE       [17, rw, bool],
+            pub FSGSBASE    [16, rw, bool],
+            pub UMIP        [11, rw, bool],
+            pub OSXMMEXCPT  [10, rw, bool],
+            pub OSFXSR      [09, rw, bool],
+            pub PCE         [08, rw, bool],
+            pub PGE         [07, rw, bool],
+            pub MCE         [06, rw, bool],
+            pub PAE         [05, rw, bool],
+            pub PSE         [04, rw, bool],
+            pub DE          [03, rw, bool],
+            pub TSD         [02, rw, bool],
+            pub PVI         [01, rw, bool],
             /// #  virtual-8086 模式扩展
             /// Virtual-8086 Mode Extensions
             ///
@@ -52,7 +52,7 @@ pub mod fields {
             ///
             /// 1. 虚拟的、可屏蔽的、外部中断控制（Flags 寄存器中的 VIF、VIP 标签），以及几个可以操控 Flags.IF 位的指令。
             /// 2. 通过使用 TSS 中的中断重定向 bitmap 来选择性的截断软件中断（INTn 指令）。
-            VME         [00, rw, bool]
+            pub VME         [00, rw, bool]
         }
     }
 }

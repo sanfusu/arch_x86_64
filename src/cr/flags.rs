@@ -124,31 +124,31 @@ pub mod fields {
             /// processor feature identification bit
             ///
             /// 如果软件能够修改该 bit 位，则表示处理器支持 CPUID 指令。
-            ID  [21, rw, bool],
+            pub ID  [21, rw, bool],
             // VIP [20, rw, bool],
             // VIF [19, rw, bool],
-            AC  [18, rw, bool],
+            pub AC  [18, rw, bool],
             // VM  [17, rw, bool],
             // RF  [16, rw, bool],
-            NT  [14, rw, bool],
+            pub NT  [14, rw, bool],
             /// IOPL 字段指定了需要执行 I/O 地址空间指令的特权级别。
-            IOPL[12..=13, rw, u8],
+            pub IOPL[12..=13, rw, u8],
             /// 任何特权级别均可读
-            OF  [11, rw, bool],
+            pub OF  [11, rw, bool],
             /// 任何特权级别均可读
-            DF  [10, rw, bool],
-            IF  [09, rw, bool],
-            TF  [08, rw, bool],
+            pub DF  [10, rw, bool],
+            pub IF  [09, rw, bool],
+            pub TF  [08, rw, bool],
             /// 任何特权级别均可读
-            SF  [07, rw, bool],
+            pub SF  [07, rw, bool],
             /// 任何特权级别均可读
-            ZF  [06, rw, bool],
+            pub ZF  [06, rw, bool],
             /// 任何特权级别均可读
-            AF  [04, rw, bool],
+            pub AF  [04, rw, bool],
             /// 任何特权级别均可读
-            PF  [02, rw, bool],
+            pub PF  [02, rw, bool],
             /// 任何特权级别均可读
-            CF  [00, rw, bool]
+            pub CF  [00, rw, bool]
         }
     }
 }
