@@ -1,11 +1,3 @@
-//! Cr0 提供运行模式控制和一些处理器特性控制。
-//!
-//! 使用 `MOV CRn` 指令读写 Cr0 寄存器。
-//! 在 64-bit 模式下，CR0 和 CR4 的高 32 位只能写 0，如果写 1 则会触发通用保护异常：#GP(0)。
-//!
-
-use bits::field::{BufferReader, BufferWriter};
-
 /// CR0 控制寄存器；
 ///
 /// 基本读取流程：
@@ -36,29 +28,7 @@ impl Cr0Buffer {
         asm!("mov cr0, {}", in(reg) self.data);
     }
 }
-impl BufferWriter for Cr0Buffer {
-    #[must_use = "The modified value works after flushed into register"]
-    fn write<T: bits::field::Field<Self> + bits::field::FieldWriter<Self>>(
-        &mut self,
-        value: T::ValueType,
-    ) -> &mut Self {
-        T::write(self, value);
-        self
-    }
-}
-impl BufferReader for Cr0Buffer {
-    fn read<T: bits::field::Field<Self> + bits::field::FieldReader<Self>>(&self) -> T::ValueType {
-        T::read(self)
-    }
-
-    fn output<T: bits::field::Field<Self> + bits::field::FieldReader<Self>>(
-        &self,
-        out: &mut T::ValueType,
-    ) -> &Self {
-        *out = T::read(self);
-        self
-    }
-}
+impl_buffer_trait!(Cr0Buffer);
 
 pub mod fields {
     bits::fields_ex! {
