@@ -2,6 +2,8 @@ use bits::field::{BufferReader, BufferWriter};
 
 pub struct Cr3;
 impl Cr3 {
+    /// + legacy 模式下 Non-Pae 分页下的 CR3 寄存器读
+    /// + Long 模式下 `CR4.PCIDE = 0` 时的 CR3 寄存器读
     #[inline]
     pub unsafe fn buffer() -> Cr3Buffer {
         let mut x;
@@ -13,39 +15,61 @@ impl Cr3 {
 pub struct Cr3Buffer {
     data: usize,
 }
-
 impl Cr3Buffer {
     #[inline]
     pub unsafe fn flush(&mut self) {
         asm!("mov cr3, {}", in(reg) self.data);
     }
-}
-impl BufferWriter for Cr3Buffer {
-    #[must_use = "The modified value works after flushed into register"]
-    fn write<T>(&mut self, value: T::ValueType) -> &mut Self
-    where
-        T: bits::field::Field<Self> + bits::field::FieldWriter<Self>,
-    {
-        T::write(self, value);
-        self
-    }
-}
-impl BufferReader for Cr3Buffer {
-    fn read<T: bits::field::Field<Self> + bits::field::FieldReader<Self>>(&self) -> T::ValueType {
-        T::read(self)
+
+    /// CR4.PCIDE = 1 时，将 Cr3Buffer 转换为 PcidCr3Buffer，这样就可以访问 pcid bit 位了。
+    #[cfg(target_arch = "x86_64")]
+    pub unsafe fn as_pcid(&self) -> PcidCr3Buffer {
+        PcidCr3Buffer { data: self.data }
     }
 
-    fn output<T: bits::field::Field<Self> + bits::field::FieldReader<Self>>(
-        &self,
-        out: &mut T::ValueType,
-    ) -> &Self {
-        *out = T::read(self);
-        self
+    /// Legacy-Mode PAE 使能时 Cr3 寄存器读。
+    #[cfg(target_arch = "x86")]
+    pub unsafe fn as_pae(&self) -> PaeCr3Buffer {
+        PaeCr3Buffer { data: self.data }
     }
+}
+
+#[cfg(target_arch = "x86_64")]
+pub struct PcidCr3Buffer {
+    data: usize,
+}
+#[cfg(target_arch = "x86_64")]
+impl PcidCr3Buffer {
+    #[inline]
+    pub unsafe fn flush(&mut self) {
+        asm!("mov cr3, {}", in(reg) self.data);
+    }
+}
+
+#[cfg(target_arch = "x86")]
+pub struct PaeCr3Buffer {
+    data: usize,
+}
+#[cfg(target_arch = "x86")]
+impl PaeCr3Buffer {
+    #[inline]
+    pub unsafe fn flush(&mut self) {
+        asm!("mov cr3, {}", in(reg) self.data);
+    }
+}
+
+impl_buffer_trait! {
+    #[cfg(target_arch="x86")]
+    PaeCr3Buffer;
+
+    #[cfg(target_arch="x86_64")]
+    PcidCr3Buffer;
+
+    Cr3Buffer;
 }
 
 pub mod fields {
-    /// # Table Base Address Field
+    /// ## Table Base Address Field
     ///
     /// Legacy 模式下指向最高级别的分页转换表的物理起始地址，该字段的大小依赖于所使用的分页形式：
     ///
@@ -62,10 +86,7 @@ pub mod fields {
     /// > Amd64.pdf 手册上并没有说明写 1 是否会触发异常。
     pub struct TBA;
 
-    /// PAE 模式下的 TBA
-    pub struct TBAPAE;
-
-    /// # Page-Level Cache Disable(PCD) bit
+    /// ## Page-Level Cache Disable(PCD) bit
     ///
     /// 页级别的缓存禁用位，用于指示最高级别的页转换表是否缓存。
     ///
@@ -73,7 +94,7 @@ pub mod fields {
     /// + 当 `PCD = 1` 时，转换表不可缓存。
     pub struct PCD;
 
-    /// # Page-level writethrough
+    /// ## Page-level writethrough
     ///
     /// 用于指示最高级别的页转换表是否具有回写或透写的缓存策略。
     ///
@@ -81,24 +102,33 @@ pub mod fields {
     /// + PWT=1，表具有透写缓存策略
     pub struct PWT;
 
-    /// # Process Contex Identifier
+    /// ## Process Contex Identifier
     ///
     /// Bits 11:0。`CR4.PCIDE = 1` 时，该 12 bit 字段决定了当前处理器上下文标识符。
     pub struct PCID;
 
-    #[cfg(target_arch = "x86")]
-    bits::fields! {
-        super::Cr3Buffer [data] {
-            TBAPAE [5..=31, rw, usize],
-            TBA [12..=31,  rw, usize]
-        }
-    }
-
     #[cfg(target_arch = "x86_64")]
     bits::fields! {
         super::Cr3Buffer [data] {
-            TBA [12..=51, rw, usize],
-            PCID [0..=11, rw, u16]
+            TBA [12..=51, rw, usize]
+        }
+    }
+    #[cfg(target_arch = "x86")]
+    bits::fields! {
+        super::Cr3Buffer [data] {
+            TBA [12..=31,  rw, usize]
+        }
+    }
+    #[cfg(target_arch = "x86")]
+    bits::fields! {
+        super::PaeCr3Buffer [data] {
+            TBA [5..=31, rw, usize]
+        }
+    }
+    #[cfg(target_arch = "x86_64")]
+    bits::fields! {
+        super::PcidCr3Buffer [data] {
+            PCID    [00..=11, rw, u16]
         }
     }
     bits::fields! {
