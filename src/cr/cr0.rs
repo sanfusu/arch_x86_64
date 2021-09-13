@@ -33,7 +33,7 @@ impl_reg_buffer_trait!(Cr0Buffer);
 pub mod fields {
     bits::fields_ex! {
         super::Cr0Buffer [data] {
-            PG [31, rw, bool],
+            pub PG [31, rw, bool],
             /// # Cache Disable (CD) Bit
             ///
             /// + 当 CD 清 0 时，内部缓存会被启用。
@@ -41,22 +41,22 @@ pub mod fields {
             /// + CD 置 1 时，处理器会忽视 page 级别的缓存控制位 (PWT 和 PCD)，如果分页使能的话。PWT 和 PCD 位于 CR3 寄存器中。
             ///
             /// 软件可以通过置 CD 为 1，并将 cache 无效化来禁止访问缓存。
-            CD [30, rw, bool],
+            pub CD [30, rw, bool],
             /// # Not Writethrough (NW) Bit
             ///
             /// 清 0 或置 1 均会被忽视，该字段已被废弃。
-            NW [29, rw, bool],
+            pub NW [29, rw, bool],
             /// # Alignment Mask (AM) Bit
             ///
             /// 当 RFLAGS.AC = 1 时，可以通过置 AM 为 1 来使能自动对齐检查。
             /// RFLAGS.AC = 0 或 AM = 0，均可以禁用自动对齐检查。
             /// 当自动对齐检查使能，并且 CPL = 3 时，引用未对齐操作数会导致对齐检查异常 (#AC)
-            AM [18, rw, bool],
+            pub AM [18, rw, bool],
             /// # Write Protect (WP) Bit
             ///
             /// + WP 置 1 时，supervisor-level 的软件无法写入只读页面。
             /// + WP 置 0 时，supervisor-level 的软件可以写入只读页面。
-            WP [16, rw, bool],
+            pub WP [16, rw, bool],
             /// # Numeric Error (NE) Bit
             ///
             /// NE 清 0，会禁用 x87 浮点异常的内部控制，并使能外部控制，
@@ -68,12 +68,12 @@ pub mod fields {
             ///
             /// NE 置 1，则使用内部报告机制，并禁用外部报告机制。
             /// 推荐软件置 NE 为 1，这种情况下会有更好的 x87 浮点异常处理性能。
-            NE [5,  rw, bool],
+            pub NE [5,  rw, bool],
             /// # Extension Type (ET) Bit
             ///
             /// 只读。部分早期 x86 处理器中，软件会将 ET 置 1 来表明支持 387DX 数学协处理器指令。
             /// 该 bit 现在属于保留字段，并强制为 1，软件无法清零。
-            ET [4,  ro, bool],
+            pub ET [4,  ro, bool],
             /// # Task Switched (TS) Bit
             ///
             /// TS 置 1 后：
@@ -89,7 +89,7 @@ pub mod fields {
             /// 这种软件控制的方法在长模式下依旧奏效（长模式不支持硬件任务切换机制）。
             ///
             /// 当 TS=1 时 [`MP`] 位控制 WAIT/FWAIT 指令是否会触发 #NM 异常。
-            TS [3,  rw, bool],
+            pub TS [3,  rw, bool],
             /// # Emulate Coprocessor (EM) Bit
             ///
             /// EM 置 1 后：
@@ -100,7 +100,7 @@ pub mod fields {
             /// 如果有需要，可以在异常处理程序中模拟这些指令，从而达到模拟协处理器的目的。
             ///
             /// ❗ EM 置 1 后，WAIT/FWAIT 指令执行不会导致 #NM 异常。
-            EM [2,  rw, bool],
+            pub EM [2,  rw, bool],
             /// # Monitor Coprocessor (MP) Bit
             ///
             /// 和任务切换 [`TS`] 位一起协同控制 `WAIT/FWAIT` 指令执行时是否会触发 device-not-available 异常 (#NM)
@@ -109,12 +109,12 @@ pub mod fields {
             /// + 如果 MP 和 TS 中任意一位清 0，则 `WAIT/FWAIT` 正常执行。
             ///
             /// 如果处理器支持 x87 指令，则通常将 MP 置 1，以便由 TS 来掌控因上下文切换而导致的 x87 指令上下文环境保存的时机。
-            MP [1,  rw, bool],
+            pub MP [1,  rw, bool],
             /// # Protected-Mode Enable (PE) Bit
             ///
             /// 保护模式使能位，写 true 使能，写 false 禁用。
             /// 处理器运行在保护模式时，段保护机制会被使能。
-            PE [0,  rw, bool]
+            pub PE [0,  rw, bool]
         }
     }
 }

@@ -94,17 +94,17 @@ pub mod fields {
             BaseAddress1    [16..=31, rw, u16]
         }
         Descriptor [high] {
-            BaseAddress2    [00..=07, rw, u8],
-            Type            [08..=11, rw, u8],
-            S               [12, rw, bool],
-            DPL             [13..=14, rw, u8],
-            P               [15, rw, bool],
-            SegLimit2       [16..=19, rw, u8],
-            AVL             [20, rw, bool],
-            L               [21, rw, bool],
-            DB              [22, rw, bool],
-            G               [23, rw, bool],
-            BaseAddress3    [24..=31, rw, u8],
+            BaseAddress2        [00..=07, rw, u8],
+            pub Type            [08..=11, rw, u8],
+            pub S               [12, rw, bool],
+            pub DPL             [13..=14, rw, u8],
+            pub P               [15, rw, bool],
+            SegLimit2           [16..=19, rw, u8],
+            pub AVL             [20, rw, bool],
+            pub L               [21, rw, bool],
+            pub DB              [22, rw, bool],
+            pub G               [23, rw, bool],
+            BaseAddress3        [24..=31, rw, u8],
         }
     }
 }
