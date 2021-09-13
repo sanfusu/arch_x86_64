@@ -1,3 +1,5 @@
+pub mod gdtr;
+
 #[repr(C)]
 pub struct Descriptor {
     low: u32,
