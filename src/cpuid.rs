@@ -25,7 +25,7 @@ impl Cpuid {
         #[cfg(target_arch = "x86")]
         {
             use crate::cr::flags::{fields, Flags};
-            use bits::field::{BufferReader, BufferWriter};
+            use register::{RegisterBufferReader, RegisterBufferWriter};
 
             let mut flags = Flags::buffer();
             flags.write::<fields::ID>(true).flush();
