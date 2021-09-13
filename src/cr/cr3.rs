@@ -56,7 +56,7 @@ impl PaeCr3Buffer {
     }
 }
 
-impl_buffer_trait! {
+impl_reg_buffer_trait! {
     #[cfg(target_arch="x86")]
     PaeCr3Buffer;
 

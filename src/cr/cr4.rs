@@ -19,7 +19,7 @@ impl Cr4Buffer {
     }
 }
 
-impl_buffer_trait!(Cr4Buffer);
+impl_reg_buffer_trait!(Cr4Buffer);
 
 pub mod fields {
     bits::fields_ex! {

@@ -115,7 +115,7 @@ impl FlagsBuffer {
     }
 }
 
-impl_buffer_trait!(FlagsBuffer);
+impl_reg_buffer_trait!(FlagsBuffer);
 
 pub mod fields {
     bits::fields_ex! {

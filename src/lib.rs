@@ -5,34 +5,23 @@ macro_rules! impl_buffer_trait {
     ($($(#[$Attr:meta])? $Buffer:ident);+ $(;)?) => {
         $(
             $(#[$Attr])?
-            impl $Buffer {
-                pub fn read<T: bits::field::Field<Self> + bits::field::FieldReader<Self>>(&self) -> T::ValueType {
-                    T::read(self)
-                }
-                pub fn output<T: bits::field::Field<Self> + bits::field::FieldReader<Self>>(
-                    &self,
-                    out: &mut T::ValueType,
-                ) -> &Self {
-                    *out = T::read(self);
-                    self
-                }
+            impl bits::field::BufferReader for $Buffer {
+            }
+            $(#[$Attr])?
+            impl bits::field::BufferWriter for $Buffer {
+            }
+        )+
+    };
+}
 
-                #[must_use = "The modified value works after flushed into register"]
-                pub fn write<T>(&mut self, value: T::ValueType) -> &mut Self
-                where
-                    T: bits::field::Field<Self> + bits::field::FieldWriter<Self>,
-                {
-                    T::write(self, value);
-                    self
-                }
-                #[must_use = "The modified value works after flushed into register"]
-                pub fn revert<T>(&mut self) -> &mut Self
-                where
-                    T: bits::field::Field<Self> + bits::field::FieldWriter<Self>,
-                {
-                    T::revert(self);
-                    self
-                }
+macro_rules! impl_reg_buffer_trait {
+    ($($(#[$Attr:meta])? $Buffer:ident);+ $(;)?) => {
+        $(
+            $(#[$Attr])?
+            impl register::RegisterBufferReader for $Buffer {
+            }
+            $(#[$Attr])?
+            impl register::RegisterBufferWriter for $Buffer {
             }
         )+
     };

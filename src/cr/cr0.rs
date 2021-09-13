@@ -28,7 +28,7 @@ impl Cr0Buffer {
         asm!("mov cr0, {}", in(reg) self.data);
     }
 }
-impl_buffer_trait!(Cr0Buffer);
+impl_reg_buffer_trait!(Cr0Buffer);
 
 pub mod fields {
     bits::fields_ex! {

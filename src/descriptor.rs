@@ -27,7 +27,7 @@ pub enum DescriptorType {
 
 pub mod fields {
     use bits::{
-        field::{Field, FieldReader, FieldWriter},
+        field::{BufferReader, BufferWriter, Field, FieldReader, FieldWriter},
         BitsOps, IntoBits,
     };
 
@@ -95,15 +95,16 @@ pub mod fields {
         }
         Descriptor [high] {
             BaseAddress2    [00..=07, rw, u8],
-            BaseAddress3    [24..=31, rw, u8],
-            SegLimit2       [16..=19, rw, u8],
             Type            [08..=11, rw, u8],
             S               [12, rw, bool],
             DPL             [13..=14, rw, u8],
             P               [15, rw, bool],
-            AVL             [16..=19, rw, u8],
+            SegLimit2       [16..=19, rw, u8],
+            AVL             [20, rw, bool],
+            L               [21, rw, bool],
             DB              [22, rw, bool],
-            G               [23, rw, bool]
+            G               [23, rw, bool],
+            BaseAddress3    [24..=31, rw, u8],
         }
     }
 }
