@@ -9,8 +9,7 @@ impl Flags {
     /// 和 buffer 类似，但是可以在实模式（虚拟 8086 模式下调用）
     /// 此时 flags 寄存器只有 16 bit。
     #[inline]
-    #[cfg(target_arch = "x86")]
-    #[no_mangle]
+    #[cfg(any(target_arch = "x86", doc))]
     pub unsafe fn real_buffer() -> FlagsBuffer {
         let mut data: u16;
         asm!(
@@ -102,9 +101,9 @@ impl FlagsBuffer {
             options(nomem)
         );
     }
-    /// 类似于 [`flush`](FlagsBUffer::flush)，但是可以在实模式下调用，需要注意实模式下 flags 寄存器只有 16 bit
+    /// 类似于 [`flush`](FlagsBuffer::flush)，但是可以在实模式下调用，需要注意实模式下 flags 寄存器只有 16 bit
     #[inline]
-    #[cfg(target_arch = "x86")]
+    #[cfg(any(target_arch = "x86", doc))]
     pub unsafe fn real_flush(&mut self) {
         asm!(
             "push {:x}",
