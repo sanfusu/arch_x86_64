@@ -1,5 +1,3 @@
-use bits::field::{BufferReader, BufferWriter};
-
 use super::{rdmsr, wrmsr};
 
 /// # 扩展特性使能寄存器
@@ -27,29 +25,8 @@ impl EferBuffer {
         wrmsr(EFER::REG_ADDR, self.data, 0);
     }
 }
-impl BufferReader for EferBuffer {
-    fn read<T: bits::field::Field<Self> + bits::field::FieldReader<Self>>(&self) -> T::ValueType {
-        T::read(self)
-    }
 
-    fn output<T: bits::field::Field<Self> + bits::field::FieldReader<Self>>(
-        &self,
-        out: &mut T::ValueType,
-    ) -> &Self {
-        *out = T::read(self);
-        self
-    }
-}
-impl BufferWriter for EferBuffer {
-    #[must_use = "EFER 缓冲区数据刷入到 EFER 寄存器中才能生效"]
-    fn write<T>(&mut self, value: T::ValueType) -> &mut Self
-    where
-        T: bits::field::Field<Self> + bits::field::FieldWriter<Self>,
-    {
-        T::write(self, value);
-        self
-    }
-}
+impl_reg_buffer_trait!(EferBuffer);
 
 pub mod fields {
     bits::fields_ex! {
@@ -62,13 +39,13 @@ pub mod fields {
             SVME    [12, rw, bool],
             NXE     [11, rw, bool],
             /// 用于指示 64 位模式（long mode）是否被激活。
-            /// 
+            ///
             /// 注意：该 bit 一般由处理器修改，系统软件虽然可修改，
             /// 但如果值和硬件结果不一致，则会导致 #GP 异常，所以这里认为其是只读位。
             LMA     [10, ro, bool],
             /// long mode 使能位（仅仅是有能力激活 long mode），
             /// 只有分页使能后才会真正的激活 long mode。
-            /// 
+            ///
             /// 激活 long 模式后，需要将 CS.L 置 1 才能进入到 64-bit 模式。
             LME     [08, rw, bool],
             SCE     [00, rw, bool]

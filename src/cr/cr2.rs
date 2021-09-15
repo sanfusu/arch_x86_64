@@ -2,8 +2,6 @@
 //! 引发页错误的虚拟线性地址会存放在 CR2 寄存器中，
 //! 而错误码则会压入到异常处理程序的栈中。
 
-use bits::field::{BufferReader, BufferWriter};
-
 pub struct Cr2;
 
 impl Cr2 {
@@ -25,29 +23,8 @@ impl Cr2Buffer {
         asm!("mov cr2, {}", in(reg) self.data);
     }
 }
-impl BufferWriter for Cr2Buffer {
-    #[must_use = "The modified value works after flushed into register"]
-    fn write<T>(&mut self, value: T::ValueType) -> &mut Self
-    where
-        T: bits::field::Field<Self> + bits::field::FieldWriter<Self>,
-    {
-        T::write(self, value);
-        self
-    }
-}
-impl BufferReader for Cr2Buffer {
-    fn read<T: bits::field::Field<Self> + bits::field::FieldReader<Self>>(&self) -> T::ValueType {
-        T::read(self)
-    }
 
-    fn output<T: bits::field::Field<Self> + bits::field::FieldReader<Self>>(
-        &self,
-        out: &mut T::ValueType,
-    ) -> &Self {
-        *out = T::read(self);
-        self
-    }
-}
+impl_reg_buffer_trait!(Cr2Buffer);
 
 pub mod fields {
     /// # Page Fault Virtual Address
