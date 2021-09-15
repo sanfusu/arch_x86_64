@@ -18,19 +18,20 @@ pub struct GdtrBuffer {
 }
 
 impl GDTR {
+    const LEN: usize = core::mem::size_of::<usize>() + 2;
+
     #[inline]
     pub unsafe fn buffer() -> GdtrBuffer {
-        const LEN: usize = core::mem::size_of::<usize>() + 2;
-
-        let mut ptr = [0u8; LEN].as_mut_ptr();
+        let mut ptr = [0u8; GDTR::LEN].as_mut_ptr();
 
         asm!(
             "sgdt [{}]", inout(reg) ptr, options(nostack, preserves_flags)
         );
 
-        let buffer = &*slice_from_raw_parts(ptr, LEN);
+        let buffer = &*slice_from_raw_parts(ptr, GDTR::LEN);
 
-        // @unwrap 这里的 unrwap 不会导致 panic，应为长度已经由 LEN 确保了。
+        // @safety_unwrap_panic:
+        // 这里的 unrwap 不会导致 panic，应为长度已经由 LEN 确保了。
         GdtrBuffer {
             limit: u16::from_le_bytes(buffer[0..=1].try_into().unwrap()),
             base_addr: usize::from_le_bytes(buffer[2..].try_into().unwrap()),
@@ -41,10 +42,15 @@ impl GdtrBuffer {
     /// 只能在 CPL0 时调用。 一般在切换到保护模式前调用。
     #[inline]
     pub unsafe fn flush(&mut self) {
-        let mut bytes = [0u8; core::mem::size_of::<usize>() + 2];
+        let mut bytes = [0u8; GDTR::LEN];
 
-        bytes[0..=1].copy_from_slice(&self.limit.to_ne_bytes());
-        bytes[2..].copy_from_slice(&self.base_addr.to_ne_bytes());
+        // @safety_implicity_panic:
+        // copy_from_slice 的源长和目的长，由 u16 为确定的两字节长度保证。不会导致 panic。
+        bytes[0..=1].copy_from_slice(&self.limit.to_le_bytes());
+
+        // @safety_implicity_panic:
+        // copy_from_slice 的长度由 GDTR::LEN 保证，不会导致 panic。
+        bytes[2..].copy_from_slice(&self.base_addr.to_le_bytes());
 
         let ptr = bytes.as_mut_ptr();
 

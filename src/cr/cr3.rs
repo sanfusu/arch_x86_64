@@ -21,6 +21,7 @@ impl Cr3Buffer {
 
     /// CR4.PCIDE = 1 时，将 Cr3Buffer 转换为 PcidCr3Buffer，这样就可以访问 pcid bit 位了。
     #[cfg(target_arch = "x86_64")]
+    #[inline]
     pub unsafe fn as_pcid(&self) -> PcidCr3Buffer {
         PcidCr3Buffer { data: self.data }
     }
