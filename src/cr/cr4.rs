@@ -39,8 +39,26 @@ pub mod fields {
             pub MCE         [06, rw, bool],
             pub PAE         [05, rw, bool],
             pub PSE         [04, rw, bool],
+            /// # 调试扩展位
+            /// Debugging Extensions
+            /// 
+            /// + 置 1：使能 I/O 断点，并且将 DR4 和 DR5 置为保留寄存器；此时访问这两个寄存器会导致无效操作码 #UD 异常。
             pub DE          [03, rw, bool],
+            /// # 时间戳禁用位
+            /// Time-Stamp Disable
+            ///
+            /// 用来允许控制哪一个特权级别的软件可以读取时间戳计数器；
+            ///
+            /// + 清 0：任何特权级别的软件均可以使用 RDTSC 或 RDTSCP 指令；
+            /// + 置 1：只有特权级别为 0 的软件可以执行上面的两条指令。
             pub TSD         [02, rw, bool],
+            /// # 保护模式虚拟中断
+            /// Protected-Mode Virtual Interrupts
+            ///
+            /// + 置 1 使能保护模式虚拟中断。RFLAGS 寄存器中的 VIF 和 VIP 也会被同时使能（如果支持的话）。
+            /// + 清 0 禁用。
+            ///
+            /// 只有 STI 和 CLI 指令会受到 PVI bit 位影响，这两个指令用于使能和禁用 RFLAGS.IF 位。
             pub PVI         [01, rw, bool],
             /// #  virtual-8086 模式扩展
             /// Virtual-8086 Mode Extensions

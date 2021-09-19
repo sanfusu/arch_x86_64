@@ -125,7 +125,16 @@ pub mod fields {
             /// 如果软件能够修改该 bit 位，则表示处理器支持 CPUID 指令。
             pub ID  [21, rw, bool],
             // VIP [20, rw, bool],
-            // VIF [19, rw, bool],
+            /// # 虚拟中断位
+            /// Virtual Interrupt(VIF) Bit
+            ///
+            /// RFLAGS.IF 位的虚拟映像位。
+            ///
+            /// 当虚拟 8086 模式扩展 (CR4.VME) 使能时
+            /// 或者保护模式虚拟中断 CR4.PVI 使能时，且 RFLAGS.IOPL 小于等于 3 时启用。
+            ///
+            /// 使能后，原本修改 IF 位的指令会转而修改 VIF 位（不再修改 IF 位）；
+            pub VIF     [19, ro, bool],
             pub AC  [18, rw, bool],
             // VM  [17, rw, bool],
             // RF  [16, rw, bool],
