@@ -2,10 +2,10 @@ use core::marker::PhantomData;
 
 #[derive(Debug, Default)]
 pub struct CpuidResult {
-    pub eax: u32,
-    pub ebx: u32,
-    pub ecx: u32,
-    pub edx: u32,
+    pub eax: usize,
+    pub ebx: usize,
+    pub ecx: usize,
+    pub edx: usize,
 }
 
 /// 通过不同的功能号，提供关于处理器和其能力的信息。
@@ -47,15 +47,31 @@ impl Cpuid {
     }
     /// 根据功能号查询处理器信息和其特性。
     #[inline]
-    pub fn query(&self, leaf: u32, sub_leaf: u32) -> CpuidResult {
+    pub fn query(&self, leaf: usize, sub_leaf: usize) -> CpuidResult {
         let mut ret = CpuidResult {
             ..Default::default()
         };
+        // 有效值只占用低 32bit，但是在 64bit 模式下会发生 0 扩展，
+        // 为了防止编译器利用 r{a,b,c,d}x 寄存器的高 32 bit，这里将结果和入参定义为 usize 类型。
+        #[cfg(target_arch = "x86_64")]
         unsafe {
             asm!(
-                "mov ebx, {0:e}",
+                "mov rbx, {0}", // ebx 是 llvm 内部保留寄存器，无法用作内联汇编的操作数。
                 "cpuid",
-                "xchg ebx, {0:e}",
+                "xchg rbx, {0}",
+                lateout(reg) ret.ebx,
+                inlateout("rax") leaf => ret.eax,
+                inlateout("rcx") sub_leaf => ret.ecx,
+                lateout("rdx") ret.edx,
+                options(nostack, preserves_flags),
+            );
+        }
+        #[cfg(target_arch = "x86")]
+        unsafe {
+            asm!(
+                "mov ebx, {0}", // ebx 是 llvm 内部保留寄存器，无法用作内联汇编的操作数。
+                "cpuid",
+                "xchg ebx, {0}",
                 lateout(reg) ret.ebx,
                 inlateout("eax") leaf => ret.eax,
                 inlateout("ecx") sub_leaf => ret.ecx,
