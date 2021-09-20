@@ -2,14 +2,26 @@
 //! 引发页错误的虚拟线性地址会存放在 CR2 寄存器中，
 //! 而错误码则会压入到异常处理程序的栈中。
 
-pub struct Cr2;
+use core::marker::PhantomData;
+
+pub struct Cr2 {
+    phantom: PhantomData<usize>,
+}
 
 impl Cr2 {
-    /// 需要确保当前为 legacy 模式
+    pub(crate) unsafe fn inst() -> Self {
+        Self {
+            phantom: PhantomData,
+        }
+    }
+
     #[inline]
-    pub unsafe fn buffer() -> Cr2Buffer {
+    pub fn buffer(&self) -> Cr2Buffer {
         let mut x;
-        asm!("mov {}, cr2", out(reg) x);
+        unsafe {
+            // 只有 inst 可以创建 Cr2 实例，安全性由 inst 函数确保。
+            asm!("mov {}, cr2", out(reg) x);
+        }
         Cr2Buffer { data: x }
     }
 }

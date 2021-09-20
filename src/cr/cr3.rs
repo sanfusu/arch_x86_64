@@ -1,11 +1,22 @@
-pub struct Cr3;
+use core::marker::PhantomData;
+
+pub struct Cr3 {
+    phatom: PhantomData<usize>,
+}
 impl Cr3 {
+    pub unsafe fn inst() -> Self {
+        Self {
+            phatom: PhantomData,
+        }
+    }
     /// + legacy 模式下 Non-Pae 分页下的 CR3 寄存器读
     /// + Long 模式下 `CR4.PCIDE = 0` 时的 CR3 寄存器读
     #[inline]
-    pub unsafe fn buffer() -> Cr3Buffer {
+    pub fn buffer(&self) -> Cr3Buffer {
         let mut x;
-        asm!("mov {}, cr3", out(reg) x);
+        unsafe {
+            asm!("mov {}, cr3", out(reg) x);
+        }
         Cr3Buffer { data: x }
     }
 }

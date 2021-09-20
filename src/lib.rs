@@ -27,6 +27,7 @@ macro_rules! impl_reg_buffer_trait {
     };
 }
 
+pub mod arch;
 pub mod cpuid;
 pub mod cr;
 pub mod descriptor;

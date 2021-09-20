@@ -1,3 +1,5 @@
+use core::marker::PhantomData;
+
 /// CR0 控制寄存器；
 ///
 /// 基本读取流程：
@@ -6,13 +8,22 @@
 /// cr0_buff.write::<fields::PG>(true).flush(); // modify the buff and flush into the register.
 /// let is_paging = cr0_buff.read::<fields::PG>(); // read the buff rather than the register.
 /// ```
-pub struct Cr0;
+pub struct Cr0 {
+    phantom: PhantomData<usize>,
+}
 
 impl Cr0 {
+    pub(crate) unsafe fn inst() -> Self {
+        Self {
+            phantom: PhantomData,
+        }
+    }
     #[inline]
-    pub unsafe fn buffer() -> Cr0Buffer {
+    pub fn buffer(&self) -> Cr0Buffer {
         let mut x;
-        asm!("mov {}, cr0", out(reg) x);
+        unsafe {
+            asm!("mov {}, cr0", out(reg) x);
+        }
         Cr0Buffer { data: x }
     }
 }
