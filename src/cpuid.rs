@@ -1,11 +1,13 @@
+pub mod feature;
+
 use core::marker::PhantomData;
 
 #[derive(Debug, Default)]
 pub struct CpuidResult {
-    pub eax: usize,
-    pub ebx: usize,
-    pub ecx: usize,
-    pub edx: usize,
+    pub eax: u32,
+    pub ebx: u32,
+    pub ecx: u32,
+    pub edx: u32,
 }
 
 /// 通过不同的功能号，提供关于处理器和其能力的信息。
@@ -48,9 +50,10 @@ impl Cpuid {
     /// 根据功能号查询处理器信息和其特性。
     #[inline]
     pub fn query(&self, leaf: usize, sub_leaf: usize) -> CpuidResult {
-        let mut ret = CpuidResult {
-            ..Default::default()
-        };
+        let mut eax: usize;
+        let mut ebx: usize;
+        let mut ecx: usize;
+        let mut edx: usize;
         // 有效值只占用低 32bit，但是在 64bit 模式下会发生 0 扩展，
         // 为了防止编译器利用 r{a,b,c,d}x 寄存器的高 32 bit，这里将结果和入参定义为 usize 类型。
         #[cfg(target_arch = "x86_64")]
@@ -59,10 +62,10 @@ impl Cpuid {
                 "mov rbx, {0}", // ebx 是 llvm 内部保留寄存器，无法用作内联汇编的操作数。
                 "cpuid",
                 "xchg rbx, {0}",
-                lateout(reg) ret.ebx,
-                inlateout("rax") leaf => ret.eax,
-                inlateout("rcx") sub_leaf => ret.ecx,
-                lateout("rdx") ret.edx,
+                lateout(reg) ebx,
+                inlateout("rax") leaf => eax,
+                inlateout("rcx") sub_leaf => ecx,
+                lateout("rdx") edx,
                 options(nostack, preserves_flags),
             );
         }
@@ -72,13 +75,18 @@ impl Cpuid {
                 "mov ebx, {0}", // ebx 是 llvm 内部保留寄存器，无法用作内联汇编的操作数。
                 "cpuid",
                 "xchg ebx, {0}",
-                lateout(reg) ret.ebx,
-                inlateout("eax") leaf => ret.eax,
-                inlateout("ecx") sub_leaf => ret.ecx,
-                lateout("edx") ret.edx,
+                lateout(reg) ebx,
+                inlateout("eax") leaf => eax,
+                inlateout("ecx") sub_leaf => ecx,
+                lateout("edx") edx,
                 options(nostack, preserves_flags),
             );
         }
-        ret
+        CpuidResult {
+            eax: eax as u32,
+            ebx: ebx as u32,
+            ecx: ecx as u32,
+            edx: edx as u32,
+        }
     }
 }
