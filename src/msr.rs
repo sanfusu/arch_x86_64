@@ -24,7 +24,7 @@ impl Msr {
     pub fn read(&self, addr: u32) -> u64 {
         unsafe { rdmsr(addr) }
     }
-    pub fn write(&self, reg_addr: u32, low: u32, high: u32) {
+    pub fn write(&mut self, reg_addr: u32, low: u32, high: u32) {
         unsafe { wrmsr(reg_addr, low, high) }
     }
 }

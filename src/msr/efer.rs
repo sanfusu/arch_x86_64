@@ -7,7 +7,7 @@ use super::Msr;
 ///
 /// EFER 是一个 model-specific 寄存器，其地址为 C000_0080h，
 /// 只能被特权软件读写。
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct Efer {
     msr: Msr,
 }
@@ -17,10 +17,10 @@ impl Efer {
         Msr::inst(feature).map(|msr| Self { msr })
     }
     #[inline]
-    pub unsafe fn buffer(self) -> EferBuffer {
+    pub unsafe fn buffer(&self) -> EferBuffer {
         EferBuffer {
             data: self.msr.read(Self::REG_ADDR) as u32,
-            efer: self,
+            efer: self.clone(),
         }
     }
 }
