@@ -1,28 +1,37 @@
-use super::{rdmsr, wrmsr};
+use crate::cpuid::feature::Feature;
+
+use super::Msr;
 
 /// # 扩展特性使能寄存器
 /// Extended Feature Enable Register
 ///
 /// EFER 是一个 model-specific 寄存器，其地址为 C000_0080h，
 /// 只能被特权软件读写。
-pub struct EFER;
-impl EFER {
+#[derive(Clone, Copy)]
+pub struct Efer {
+    msr: Msr,
+}
+impl Efer {
     const REG_ADDR: u32 = 0xC000_0080;
-
+    pub fn inst(feature: &Feature) -> Option<Self> {
+        Msr::inst(feature).map(|msr| Self { msr })
+    }
     #[inline]
-    pub unsafe fn buffer() -> EferBuffer {
+    pub unsafe fn buffer(self) -> EferBuffer {
         EferBuffer {
-            data: rdmsr(Self::REG_ADDR) as u32,
+            data: self.msr.read(Self::REG_ADDR) as u32,
+            efer: self,
         }
     }
 }
 pub struct EferBuffer {
     data: u32,
+    efer: Efer,
 }
 impl EferBuffer {
     #[inline]
     pub unsafe fn flush(&mut self) {
-        wrmsr(EFER::REG_ADDR, self.data, 0);
+        self.efer.msr.write(Efer::REG_ADDR, self.data, 0);
     }
 }
 
@@ -50,5 +59,18 @@ pub mod fields {
             LME     [08, rw, bool],
             SCE     [00, rw, bool]
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use std::println;
+
+    use crate::msr::efer::{Efer, EferBuffer};
+
+    #[test]
+    fn size() {
+        println!("{}", core::mem::size_of::<Efer>());
+        println!("{}", core::mem::size_of::<EferBuffer>())
     }
 }
