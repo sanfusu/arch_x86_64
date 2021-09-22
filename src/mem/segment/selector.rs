@@ -7,7 +7,7 @@ impl_buffer_trait!(Selector);
 
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
 pub struct Privilege {
-    pub(crate) data: u8,
+    pub(in crate::mem) data: u8,
 }
 
 impl Display for Privilege {
