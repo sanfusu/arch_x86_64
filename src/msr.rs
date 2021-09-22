@@ -1,19 +1,17 @@
 use core::marker::PhantomData;
 
-use register::RegisterBufferReader;
-
-use crate::cpuid::feature::{self, Feature};
+use crate::cpuid::feature::Feature;
 
 pub mod efer;
 pub mod syscfg;
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct Msr {
     phatom: PhantomData<usize>,
 }
 impl Msr {
     pub fn inst(feature: &Feature) -> Option<Self> {
-        if feature.read::<feature::fields::MSR>() {
+        if feature.msr() {
             Some(Self {
                 phatom: PhantomData,
             })
@@ -21,6 +19,7 @@ impl Msr {
             None
         }
     }
+
     pub fn read(&self, addr: u32) -> u64 {
         unsafe { rdmsr(addr) }
     }

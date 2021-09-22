@@ -1,9 +1,17 @@
 pub struct Feature {
-    ecx: u32,
-    edx: u32,
+    pub(crate) ecx: u32,
+    pub(crate) edx: u32,
 }
 
 impl_reg_buffer_trait!(Feature);
+
+plain_field! {
+    Feature {
+        pub msr:    fields::MSR,
+        pub fpu:    fields::FPU,
+        pub sse3:   fields::SSE3
+    }
+}
 
 pub mod fields {
     use super::Feature;
