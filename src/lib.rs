@@ -69,3 +69,4 @@ pub mod cr;
 pub mod descriptor;
 pub mod msr;
 pub mod mttr;
+pub mod mem;

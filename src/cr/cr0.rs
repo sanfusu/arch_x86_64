@@ -1,5 +1,7 @@
 use core::marker::PhantomData;
 
+use crate::mem::segment::selector::Privilege;
+
 /// CR0 控制寄存器；
 ///
 /// 基本读取流程：
@@ -13,9 +15,13 @@ pub struct Cr0 {
 }
 
 impl Cr0 {
-    pub(crate) unsafe fn inst() -> Self {
-        Self {
-            phantom: PhantomData,
+    pub(crate) unsafe fn inst(pl: &Privilege) -> Option<Self> {
+        if *pl == Privilege::RPL0 {
+            Some(Self {
+                phantom: PhantomData,
+            })
+        } else {
+            None
         }
     }
     #[inline]

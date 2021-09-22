@@ -33,6 +33,8 @@ pub mod fields {
         BitsOps, IntoBits,
     };
 
+    use crate::mem::segment::selector::Privilege;
+
     use super::Descriptor;
 
     pub struct BaseAddress;
@@ -99,7 +101,10 @@ pub mod fields {
             BaseAddress2        [00..=07, rw, u8],
             pub Type            [08..=11, rw, u8],
             pub S               [12, rw, bool],
-            pub DPL             [13..=14, rw, u8],
+            pub DPL             [13..=14, rw, Privilege]{
+                input_converter: |pl:Privilege| pl.data as u32;
+                output_converter: |data| Privilege{data: data as u8}
+            },
             pub P               [15, rw, bool],
             SegLimit2           [16..=19, rw, u8],
             pub AVL             [20, rw, bool],
