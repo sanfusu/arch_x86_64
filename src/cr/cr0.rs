@@ -15,7 +15,7 @@ pub struct Cr0 {
 }
 
 impl Cr0 {
-    pub(crate) unsafe fn inst(pl: &Privilege) -> Option<Self> {
+    pub(crate) fn inst(pl: &Privilege) -> Option<Self> {
         if *pl == Privilege::RPL0 {
             Some(Self {
                 phantom: PhantomData,
