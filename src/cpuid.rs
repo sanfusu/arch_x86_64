@@ -2,6 +2,8 @@ pub mod feature;
 
 use core::marker::PhantomData;
 
+use self::feature::Feature;
+
 #[derive(Debug, Default)]
 pub struct CpuidResult {
     pub eax: u32,
@@ -87,6 +89,14 @@ impl Cpuid {
             ebx: ebx as u32,
             ecx: ecx as u32,
             edx: edx as u32,
+        }
+    }
+
+    pub fn feature(&self) -> Feature {
+        let result = self.query(0x01, 0);
+        Feature {
+            ecx: result.ecx,
+            edx: result.edx,
         }
     }
 }
