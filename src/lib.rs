@@ -66,7 +66,6 @@ macro_rules! def_const {
 pub mod arch;
 pub mod cpuid;
 pub mod cr;
-pub mod descriptor;
 pub mod msr;
 pub mod mttr;
 pub mod mem;
