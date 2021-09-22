@@ -44,13 +44,19 @@ pub mod fields {
 
     bits::fields_ex! {
         Selector [data] {
-            /// Requestor Privilege-Level Field
+            /// ### Requestor Privilege-Level Field
             /// 表示选择器被创建时，处理器所处在的权限级别（即 CPL）
             pub RPL [0..=1, rw, Privilege] {
                 input_converter: |cpl:Privilege| cpl.data as u16;
                 output_converter: |data| Privilege{data: data as u8}
             },
+            /// ### Table Indicator
+            /// 表示引用的是全局表（GDT），还是本地表（LDT）
+            /// + TI = 1 时，LDT
+            /// + TI = 0 时，GDT
             pub TI  [2, rw, bool],
+            /// ### Selector Index
+            /// 用于索引描述符表中的条目
             pub SI  [3..=15, rw, u16]
         }
     }
