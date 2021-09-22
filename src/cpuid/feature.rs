@@ -1,8 +1,20 @@
+use core::fmt::Display;
+
+#[derive(Debug)]
 pub struct Feature {
     pub(crate) ecx: u32,
     pub(crate) edx: u32,
 }
-
+impl Display for Feature {
+    fn fmt(&self, fmt: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        writeln!(
+            fmt,
+            "MSR: {msr}\nSSE: {sse3}",
+            msr = self.msr(),
+            sse3 = self.sse3()
+        )
+    }
+}
 impl_reg_buffer_trait!(Feature);
 
 plain_field! {
