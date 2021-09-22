@@ -5,6 +5,7 @@ pub struct Selector {
 }
 impl_buffer_trait!(Selector);
 
+/// [`Self::RPL0`]、[`Self::DPL0`]、[`Self::PL0`] 数值上是等价的，也可以互相比较，仅存在语义上的区别。
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
 pub struct Privilege {
     pub(in crate::mem) data: u8,
@@ -13,10 +14,10 @@ pub struct Privilege {
 impl Display for Privilege {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match *self {
-            Privilege { data: 0 } => f.write_str("PL0"),
-            Privilege { data: 1 } => f.write_str("PL1"),
-            Privilege { data: 2 } => f.write_str("PL2"),
-            Privilege { data: 3 } => f.write_str("PL3"),
+            Privilege::PL0 => f.write_str("PL0"),
+            Privilege::PL1 => f.write_str("PL1"),
+            Privilege::PL2 => f.write_str("PL2"),
+            Privilege::PL3 => f.write_str("PL3"),
             _ => f.write_str("unknown privelege"),
         }
     }
@@ -32,6 +33,10 @@ def_const! {
         DPL1: 1,
         DPL2: 2,
         DPL3: 3,
+        PL0: 0,
+        PL1: 1,
+        PL2: 2,
+        PL3: 3,
     }
 }
 pub mod fields {
