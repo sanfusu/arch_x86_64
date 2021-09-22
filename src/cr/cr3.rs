@@ -4,7 +4,7 @@ pub struct Cr3 {
     phatom: PhantomData<usize>,
 }
 impl Cr3 {
-    pub unsafe fn inst() -> Self {
+    pub(crate) unsafe fn inst_uncheck() -> Self {
         Self {
             phatom: PhantomData,
         }

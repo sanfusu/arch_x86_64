@@ -1,5 +1,7 @@
 use core::fmt::Display;
 
+use bits::field::BufferReader;
+
 pub struct Selector {
     pub(in crate::mem::segment) data: u16,
 }
@@ -9,6 +11,11 @@ impl_buffer_trait!(Selector);
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
 pub struct Privilege {
     pub(in crate::mem) data: u8,
+}
+impl Selector {
+    pub fn rpl(&self) -> Privilege {
+        self.read::<fields::RPL>()
+    }
 }
 
 impl Display for Privilege {
@@ -22,21 +29,27 @@ impl Display for Privilege {
         }
     }
 }
-
+#[repr(u8)]
+pub enum Privileges {
+    PL0,
+    PL1,
+    PL2,
+    PL3,
+}
 def_const! {
     Privilege {
-        RPL0: 0,
-        RPL1: 1,
-        RPL2: 2,
-        RPL3: 3,
-        DPL0: 0,
-        DPL1: 1,
-        DPL2: 2,
-        DPL3: 3,
-        PL0: 0,
-        PL1: 1,
-        PL2: 2,
-        PL3: 3,
+        pub RPL0: 0,
+        pub RPL1: 1,
+        pub RPL2: 2,
+        pub RPL3: 3,
+        pub DPL0: 0,
+        pub DPL1: 1,
+        pub DPL2: 2,
+        pub DPL3: 3,
+        pub PL0: 0,
+        pub PL1: 1,
+        pub PL2: 2,
+        pub PL3: 3,
     }
 }
 pub mod fields {

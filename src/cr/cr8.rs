@@ -1,6 +1,15 @@
-pub struct Cr8;
+use core::marker::PhantomData;
+
+pub struct Cr8 {
+    phantom: PhantomData<usize>,
+}
 
 impl Cr8 {
+    pub(crate) unsafe fn inst_uncheck() -> Self {
+        Self {
+            phantom: PhantomData,
+        }
+    }
     #[inline]
     pub unsafe fn buffer() -> Cr8Buffer {
         let mut x;

@@ -1,10 +1,19 @@
+use core::marker::PhantomData;
+
 /// Cr4 寄存器除 PCE 位之外，其余 bit 使能前均可以使用 CPUID 指令来判断是否支持该特性。
-pub struct Cr4;
+pub struct Cr4 {
+    phantom: PhantomData<usize>,
+}
 pub struct Cr4Buffer {
     data: usize,
 }
 
 impl Cr4 {
+    pub(crate) unsafe fn inst_uncheck() -> Self {
+        Self {
+            phantom: PhantomData,
+        }
+    }
     #[inline]
     pub unsafe fn buffer() -> Cr4Buffer {
         let mut x;
@@ -41,7 +50,7 @@ pub mod fields {
             pub PSE         [04, rw, bool],
             /// # 调试扩展位
             /// Debugging Extensions
-            /// 
+            ///
             /// + 置 1：使能 I/O 断点，并且将 DR4 和 DR5 置为保留寄存器；此时访问这两个寄存器会导致无效操作码 #UD 异常。
             pub DE          [03, rw, bool],
             /// # 时间戳禁用位

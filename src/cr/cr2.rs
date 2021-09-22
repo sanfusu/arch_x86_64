@@ -4,12 +4,23 @@
 
 use core::marker::PhantomData;
 
+use crate::mem::segment::{cs::Cs, selector::Privilege};
+
 pub struct Cr2 {
     phantom: PhantomData<usize>,
 }
 
 impl Cr2 {
-    pub(crate) unsafe fn inst() -> Self {
+    pub fn inst() -> Option<Self> {
+        if Cs::buffer().selector.rpl() == Privilege::PL0 {
+            Some(Self {
+                phantom: PhantomData,
+            })
+        } else {
+            None
+        }
+    }
+    pub fn inst_uncheck() -> Self {
         Self {
             phantom: PhantomData,
         }

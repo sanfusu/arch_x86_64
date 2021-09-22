@@ -1,6 +1,6 @@
 use core::marker::PhantomData;
 
-use crate::mem::segment::selector::Privilege;
+use crate::mem::segment::{cs::Cs, selector::Privilege};
 
 /// CR0 控制寄存器；
 ///
@@ -15,13 +15,18 @@ pub struct Cr0 {
 }
 
 impl Cr0 {
-    pub(crate) fn inst(pl: &Privilege) -> Option<Self> {
-        if *pl == Privilege::RPL0 {
+    pub fn inst() -> Option<Self> {
+        if Cs::buffer().selector.rpl() == Privilege::RPL0 {
             Some(Self {
                 phantom: PhantomData,
             })
         } else {
             None
+        }
+    }
+    pub(crate) unsafe fn inst_uncheck() -> Self {
+        Self {
+            phantom: PhantomData,
         }
     }
     #[inline]

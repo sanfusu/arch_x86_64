@@ -9,12 +9,18 @@ pub struct CsBuffer {
     pub selector: Selector,
 }
 impl Cs {
-    #[no_mangle]
+    #[inline]
     pub fn buffer() -> CsBuffer {
         let mut ret = CsBuffer {
             selector: Selector { data: 0 },
         };
-        unsafe { asm!("mov {0:x}, cs", out(reg) ret.selector.data) }
+        unsafe {
+            asm!(
+                "mov {0:x}, cs",
+                out(reg) ret.selector.data,
+                options(nostack, preserves_flags)
+            )
+        }
         ret
     }
 }
