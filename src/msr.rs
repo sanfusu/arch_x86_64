@@ -5,7 +5,7 @@ use crate::cpuid::feature::Feature;
 pub mod efer;
 pub mod syscfg;
 
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub struct Msr {
     phatom: PhantomData<usize>,
 }

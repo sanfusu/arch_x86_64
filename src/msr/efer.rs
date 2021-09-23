@@ -7,7 +7,6 @@ use super::Msr;
 ///
 /// EFER 是一个 model-specific 寄存器，其地址为 C000_0080h，
 /// 只能被特权软件读写。
-#[derive(Clone)]
 pub struct Efer {
     msr: Msr,
 }
@@ -20,18 +19,26 @@ impl Efer {
     pub unsafe fn buffer(&self) -> EferBuffer {
         EferBuffer {
             data: self.msr.read(Self::REG_ADDR) as u32,
-            efer: self.clone(),
+            msr: self.msr,
         }
     }
 }
+
+impl From<Msr> for Efer {
+    #[inline]
+    fn from(msr: Msr) -> Self {
+        Efer { msr }
+    }
+}
+
 pub struct EferBuffer {
     data: u32,
-    efer: Efer,
+    msr: Msr,
 }
 impl EferBuffer {
     #[inline]
     pub unsafe fn flush(&mut self) {
-        self.efer.msr.write(Efer::REG_ADDR, self.data, 0);
+        self.msr.write(Efer::REG_ADDR, self.data, 0);
     }
 }
 
@@ -46,6 +53,7 @@ pub mod fields {
             FFXSR   [14, rw, bool],
             LMSLE   [13, rw, bool],
             SVME    [12, rw, bool],
+            /// 非执行页保护特性
             NXE     [11, rw, bool],
             /// 用于指示 64 位模式（long mode）是否被激活。
             ///
