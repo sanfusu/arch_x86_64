@@ -1,6 +1,9 @@
 use core::marker::PhantomData;
 
-use crate::cpuid::feature::Feature;
+use crate::{
+    cpuid::feature::Feature,
+    mem::segment::{cs::Cs, selector::Privilege},
+};
 
 pub mod efer;
 pub mod syscfg;
@@ -11,12 +14,16 @@ pub struct Msr {
 }
 impl Msr {
     pub fn inst(feature: &Feature) -> Option<Self> {
-        if feature.msr() {
-            Some(Self {
-                phatom: PhantomData,
-            })
-        } else {
-            None
+        if Cs::buffer().selector.rpl() != Privilege::PL0 && !feature.msr() {
+            return None;
+        }
+        Some(Self {
+            phatom: PhantomData,
+        })
+    }
+    pub unsafe fn inst_uncheck() -> Self {
+        Self {
+            phatom: PhantomData,
         }
     }
 
