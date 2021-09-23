@@ -1,9 +1,5 @@
 use core::marker::PhantomData;
 
-use register::{RegisterBufferReader, RegisterBufferWriter};
-
-use super::cr4::Cr4Buffer;
-
 pub struct Cr3 {
     phatom: PhantomData<usize>,
 }
@@ -35,35 +31,36 @@ impl Cr3Buffer {
             asm!("mov cr3, {}", in(reg) self.data);
         }
     }
-
-    /// CR4.PCIDE = 1 时，将 Cr3Buffer 转换为 PcidCr3Buffer，这样就可以访问 pcid bit 位了。
-    #[cfg(target_arch = "x86_64")]
+}
+#[cfg(target_arch = "x86_64")]
+impl Cr3Buffer {
+    /// CR4.PCIDE = 1 时，将 Cr3Buffer 转换为 Cr3BufferPcid，这样就可以访问 pcid bit 位了。
     #[inline]
-    pub unsafe fn as_pcid_uncheck(&self) -> PcidCr3Buffer {
-        PcidCr3Buffer { data: self.data }
+    pub unsafe fn into_pcid_uncheck(self) -> Cr3BufferPcid {
+        Cr3BufferPcid { data: self.data }
     }
-    #[cfg(target_arch = "x86_64")]
-    pub fn as_pcid(&self, cr4_buffer: &Cr4Buffer) -> Option<PcidCr3Buffer> {
+    pub fn into_pcid(self, cr4_buffer: &super::cr4::Cr4Buffer) -> Option<Cr3BufferPcid> {
         if cr4_buffer.pcid_enabled() {
-            Some(PcidCr3Buffer { data: self.data })
+            Some(Cr3BufferPcid { data: self.data })
         } else {
             None
         }
     }
-
+}
+#[cfg(target_arch = "x86")]
+impl Cr3Buffer {
     /// Legacy-Mode PAE 使能时 Cr3 寄存器读。
-    #[cfg(target_arch = "x86")]
-    pub unsafe fn as_pae(&self) -> PaeCr3Buffer {
-        PaeCr3Buffer { data: self.data }
+    pub unsafe fn into_pae(self) -> Cr3BufferPae {
+        Cr3BufferPae { data: self.data }
     }
 }
 
 #[cfg(target_arch = "x86_64")]
-pub struct PcidCr3Buffer {
+pub struct Cr3BufferPcid {
     data: usize,
 }
 #[cfg(target_arch = "x86_64")]
-impl PcidCr3Buffer {
+impl Cr3BufferPcid {
     // @todo: 所有字段修改均可确保安全后，将 fields 中的字段可见域改为 pub(super)，然后移除 unsafe 关键字。
     #[inline]
     pub fn flush(&mut self) {
@@ -71,20 +68,26 @@ impl PcidCr3Buffer {
             asm!("mov cr3, {}", in(reg) self.data);
         }
     }
+    /// 用于写 PCID 的辅助函数
     pub fn set_pcid(&mut self, id: u16) -> &mut Self {
-        unsafe { self.write::<fields::PCID>(id) }
+        use register::RegisterBufferWriter;
+
+        self.write::<fields::PCID>(id)
     }
+    /// 用于读 pcid 的辅助函数
     pub fn pcid(&self) -> u16 {
+        use register::RegisterBufferReader;
+
         self.read::<fields::PCID>()
     }
 }
 
 #[cfg(target_arch = "x86")]
-pub struct PaeCr3Buffer {
+pub struct Cr3BufferPae {
     data: usize,
 }
 #[cfg(target_arch = "x86")]
-impl PaeCr3Buffer {
+impl Cr3BufferPae {
     #[inline]
     pub fn flush(&mut self) {
         unsafe {
@@ -95,10 +98,10 @@ impl PaeCr3Buffer {
 
 impl_reg_buffer_trait! {
     #[cfg(target_arch="x86")]
-    PaeCr3Buffer;
+    Cr3BufferPae;
 
     #[cfg(target_arch="x86_64")]
-    PcidCr3Buffer;
+    Cr3BufferPcid;
 
     Cr3Buffer;
 }
@@ -140,7 +143,8 @@ pub mod fields {
     /// ## Process Contex Identifier
     ///
     /// Bits 11:0。`CR4.PCIDE = 1` 时，该 12 bit 字段决定了当前处理器上下文标识符。
-    pub struct PCID;
+    #[cfg(target_arch = "x86_64")]
+    pub(super) struct PCID;
 
     #[cfg(target_arch = "x86_64")]
     bits::fields! {
@@ -156,13 +160,13 @@ pub mod fields {
     }
     #[cfg(target_arch = "x86")]
     bits::fields! {
-        super::PaeCr3Buffer [data] {
+        super::Cr3BufferPae [data] {
             TBA [5..=31, rw, usize]
         }
     }
     #[cfg(target_arch = "x86_64")]
     bits::fields! {
-        super::PcidCr3Buffer [data] {
+        super::Cr3BufferPcid [data] {
             PCID    [00..=11, rw, u16]
         }
     }

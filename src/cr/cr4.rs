@@ -57,7 +57,13 @@ impl Cr4Buffer {
         if !std_feature.support_pcid() {
             return Err(ArchError::PcidIsNotSupported);
         }
-        Ok(unsafe { self.write::<fields::PCIDE>(true) })
+        Ok(self.write::<fields::PCIDE>(true))
+    }
+    pub fn enable_pcid_uncheck(&mut self) -> &mut Self {
+        self.write::<fields::PCIDE>(true)
+    }
+    pub fn disable_pcid(&mut self) -> &mut Self {
+        self.write::<fields::PCIDE>(false)
     }
 }
 
@@ -71,7 +77,7 @@ pub mod fields {
             pub SMAP        [21, rw, bool],
             pub SMEP        [20, rw, bool],
             pub OSXSAVE     [18, rw, bool],
-            pub PCIDE       [17, rw, bool],
+            pub(super) PCIDE[17, rw, bool],
             pub FSGSBASE    [16, rw, bool],
             pub UMIP        [11, rw, bool],
             pub OSXMMEXCPT  [10, rw, bool],
