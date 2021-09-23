@@ -13,8 +13,10 @@ impl Syscfg {
     }
 }
 impl SyscfgBuffer {
-    pub unsafe fn flush(&mut self) {
-        wrmsr(Syscfg::REG_ADDR, self.data, 0)
+    pub fn flush(&mut self) {
+        unsafe {
+            wrmsr(Syscfg::REG_ADDR, self.data, 0);
+        }
     }
 }
 

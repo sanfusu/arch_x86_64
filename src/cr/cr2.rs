@@ -42,8 +42,10 @@ pub struct Cr2Buffer {
     data: usize,
 }
 impl Cr2Buffer {
-    pub unsafe fn flush(&mut self) {
-        asm!("mov cr2, {}", in(reg) self.data);
+    pub fn flush(&mut self) {
+        unsafe {
+            asm!("mov cr2, {}", in(reg) self.data);
+        }
     }
 }
 

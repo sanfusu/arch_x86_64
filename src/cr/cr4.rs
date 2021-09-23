@@ -30,8 +30,10 @@ impl Cr4 {
 impl Cr4Buffer {
     // @todo: 所有字段修改均可确保安全后，将 fields 中的字段可见域改为 pub(super)，然后移除 unsafe 关键字。
     #[inline]
-    pub unsafe fn flush(&mut self) {
-        asm!("mov cr4, {}", in(reg) self.data);
+    pub fn flush(&mut self) {
+        unsafe {
+            asm!("mov cr4, {}", in(reg) self.data);
+        }
     }
     pub fn pcid_enabled(&self) -> bool {
         self.read::<fields::PCIDE>()
@@ -55,7 +57,7 @@ impl Cr4Buffer {
         if !std_feature.support_pcid() {
             return Err(ArchError::PcidIsNotSupported);
         }
-        Ok(self.write::<fields::PCIDE>(true))
+        Ok(unsafe { self.write::<fields::PCIDE>(true) })
     }
 }
 

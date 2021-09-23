@@ -46,8 +46,10 @@ pub struct Cr0Buffer {
 /// 用于缓存 CR0 控制寄存器；
 impl Cr0Buffer {
     #[inline]
-    pub unsafe fn flush(&mut self) {
-        asm!("mov cr0, {}", in(reg) self.data);
+    pub fn flush(&mut self) {
+        unsafe {
+            asm!("mov cr0, {}", in(reg) self.data);
+        }
     }
 }
 impl_reg_buffer_trait!(Cr0Buffer);

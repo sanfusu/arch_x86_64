@@ -85,32 +85,36 @@ impl FlagsBuffer {
     ///
     /// ⚠️ 实模式（包括虚拟 8086）下请调用 [`real_flush`](FlagsBuffer::real_flush)。
     #[inline]
-    pub unsafe fn flush(&mut self) {
-        #[cfg(target_arch = "x86")]
-        asm!(
-            "push {}",
-            "popfd",
-            in(reg) self.data,
-            options(nomem)
-        );
-        #[cfg(target_arch = "x86_64")]
-        asm!(
-            "push {}",
-            "popf",
-            in(reg) self.data,
-            options(nomem)
-        );
+    pub fn flush(&mut self) {
+        unsafe {
+            #[cfg(target_arch = "x86")]
+            asm!(
+                "push {}",
+                "popfd",
+                in(reg) self.data,
+                options(nomem)
+            );
+            #[cfg(target_arch = "x86_64")]
+            asm!(
+                "push {}",
+                "popf",
+                in(reg) self.data,
+                options(nomem)
+            );
+        }
     }
     /// 类似于 [`flush`](FlagsBuffer::flush)，但是可以在实模式下调用，需要注意实模式下 flags 寄存器只有 16 bit
     #[inline]
     #[cfg(any(target_arch = "x86", doc))]
-    pub unsafe fn real_flush(&mut self) {
-        asm!(
-            "push {:x}",
-            "popfw",
-            in(reg) self.data,
-            options(nomem)
-        );
+    pub fn real_flush(&mut self) {
+        unsafe {
+            asm!(
+                "push {:x}",
+                "popfw",
+                in(reg) self.data,
+                options(nomem)
+            );
+        }
     }
 }
 

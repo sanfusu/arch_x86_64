@@ -30,8 +30,10 @@ pub struct Cr3Buffer {
 }
 impl Cr3Buffer {
     #[inline]
-    pub unsafe fn flush(&mut self) {
-        asm!("mov cr3, {}", in(reg) self.data);
+    pub fn flush(&mut self) {
+        unsafe {
+            asm!("mov cr3, {}", in(reg) self.data);
+        }
     }
 
     /// CR4.PCIDE = 1 时，将 Cr3Buffer 转换为 PcidCr3Buffer，这样就可以访问 pcid bit 位了。
@@ -64,11 +66,13 @@ pub struct PcidCr3Buffer {
 impl PcidCr3Buffer {
     // @todo: 所有字段修改均可确保安全后，将 fields 中的字段可见域改为 pub(super)，然后移除 unsafe 关键字。
     #[inline]
-    pub unsafe fn flush(&mut self) {
-        asm!("mov cr3, {}", in(reg) self.data);
+    pub fn flush(&mut self) {
+        unsafe {
+            asm!("mov cr3, {}", in(reg) self.data);
+        }
     }
     pub fn set_pcid(&mut self, id: u16) -> &mut Self {
-        self.write::<fields::PCID>(id)
+        unsafe { self.write::<fields::PCID>(id) }
     }
     pub fn pcid(&self) -> u16 {
         self.read::<fields::PCID>()
@@ -82,8 +86,10 @@ pub struct PaeCr3Buffer {
 #[cfg(target_arch = "x86")]
 impl PaeCr3Buffer {
     #[inline]
-    pub unsafe fn flush(&mut self) {
-        asm!("mov cr3, {}", in(reg) self.data);
+    pub fn flush(&mut self) {
+        unsafe {
+            asm!("mov cr3, {}", in(reg) self.data);
+        }
     }
 }
 

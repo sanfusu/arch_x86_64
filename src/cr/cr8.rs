@@ -25,8 +25,10 @@ pub struct Cr8Buffer {
 /// 用于缓存 CR8 控制寄存器；
 impl Cr8Buffer {
     #[inline]
-    pub unsafe fn flush(&mut self) {
-        asm!("mov cr8, {}", in(reg) self.data);
+    pub fn flush(&mut self) {
+        unsafe {
+            asm!("mov cr8, {}", in(reg) self.data);
+        }
     }
 }
 impl_reg_buffer_trait!(Cr8Buffer);

@@ -39,7 +39,7 @@ pub struct EferBuffer {
 }
 impl EferBuffer {
     #[inline]
-    pub unsafe fn flush(&mut self) {
+    pub fn flush(&mut self) {
         self.msr.write(Efer::REG_ADDR, self.data, 0);
     }
     pub fn long_mode_activated(&self) -> bool {
