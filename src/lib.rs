@@ -49,7 +49,7 @@ macro_rules! def_const {
         $Struct:path {
             $(
                 $(#[$Attr:meta])*
-                $CosntName:ident:$ConstValue:literal
+                $Vis:vis $CosntName:ident:$ConstValue:literal
             ),+ $(,)?
         }
     )+) => {
@@ -66,6 +66,12 @@ macro_rules! def_const {
 pub mod arch;
 pub mod cpuid;
 pub mod cr;
-pub mod msr;
-pub mod mttr;
 pub mod mem;
+pub mod msr;
+
+#[derive(Debug)]
+pub enum ArchError {
+    LongModeInactivated,
+    PcidIsNotSupported,
+    PcidDisabled,
+}

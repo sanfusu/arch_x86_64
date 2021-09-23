@@ -2,7 +2,7 @@ pub mod feature;
 
 use core::marker::PhantomData;
 
-use self::feature::Feature;
+use self::feature::StdFeature;
 
 #[derive(Debug, Default)]
 pub struct CpuidResult {
@@ -92,11 +92,25 @@ impl Cpuid {
         }
     }
 
-    pub fn feature(&self) -> Feature {
+    pub fn std_feature(&self) -> StdFeature {
         let result = self.query(0x01, 0);
-        Feature {
+        StdFeature {
             ecx: result.ecx,
             edx: result.edx,
+        }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use std::println;
+
+    use super::Cpuid;
+
+    #[test]
+    fn feature_test() {
+        if let Some(cpuid) = unsafe { Cpuid::inst() } {
+            println!("{:#}", cpuid.std_feature());
         }
     }
 }

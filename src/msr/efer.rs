@@ -1,9 +1,11 @@
-use crate::cpuid::feature::Feature;
+use register::RegisterBufferReader;
+
+use crate::cpuid::feature::StdFeature;
 
 use super::Msr;
 
 /// # 扩展特性使能寄存器
-/// Extended Feature Enable Register
+/// Extended StdFeature Enable Register
 ///
 /// EFER 是一个 model-specific 寄存器，其地址为 C000_0080h，
 /// 只能被特权软件读写。
@@ -12,7 +14,7 @@ pub struct Efer {
 }
 impl Efer {
     const REG_ADDR: u32 = 0xC000_0080;
-    pub fn inst(feature: &Feature) -> Option<Self> {
+    pub fn inst(feature: &StdFeature) -> Option<Self> {
         Msr::inst(feature).map(|msr| Self { msr })
     }
     #[inline]
@@ -40,6 +42,9 @@ impl EferBuffer {
     pub unsafe fn flush(&mut self) {
         self.msr.write(Efer::REG_ADDR, self.data, 0);
     }
+    pub fn long_mode_activated(&self) -> bool {
+        self.read::<fields::LMA>()
+    }
 }
 
 impl_reg_buffer_trait!(EferBuffer);
@@ -59,7 +64,7 @@ pub mod fields {
             ///
             /// 注意：该 bit 一般由处理器修改，系统软件虽然可修改，
             /// 但如果值和硬件结果不一致，则会导致 #GP 异常，所以这里认为其是只读位。
-            LMA     [10, ro, bool],
+            pub LMA     [10, ro, bool],
             /// long mode 使能位（仅仅是有能力激活 long mode），
             /// 只有分页使能后才会真正的激活 long mode。
             ///

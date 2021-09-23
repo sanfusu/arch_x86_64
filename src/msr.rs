@@ -1,7 +1,7 @@
 use core::marker::PhantomData;
 
 use crate::{
-    cpuid::feature::Feature,
+    cpuid::feature::StdFeature,
     mem::segment::{cs::Cs, selector::Privilege},
 };
 
@@ -13,8 +13,8 @@ pub struct Msr {
     phatom: PhantomData<usize>,
 }
 impl Msr {
-    pub fn inst(feature: &Feature) -> Option<Self> {
-        if Cs::buffer().selector.rpl() != Privilege::PL0 && !feature.msr() {
+    pub fn inst(std_feature: &StdFeature) -> Option<Self> {
+        if Cs::buffer().selector.rpl() != Privilege::PL0 && !std_feature.support_msr() {
             return None;
         }
         Some(Self {

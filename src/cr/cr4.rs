@@ -1,5 +1,11 @@
 use core::marker::PhantomData;
 
+use register::{RegisterBufferReader, RegisterBufferWriter};
+
+use crate::{cpuid::feature::StdFeature, msr::efer::EferBuffer};
+
+use crate::ArchError;
+
 /// Cr4 寄存器除 PCE 位之外，其余 bit 使能前均可以使用 CPUID 指令来判断是否支持该特性。
 pub struct Cr4 {
     phantom: PhantomData<usize>,
@@ -22,9 +28,34 @@ impl Cr4 {
     }
 }
 impl Cr4Buffer {
+    // @todo: 所有字段修改均可确保安全后，将 fields 中的字段可见域改为 pub(super)，然后移除 unsafe 关键字。
     #[inline]
     pub unsafe fn flush(&mut self) {
         asm!("mov cr4, {}", in(reg) self.data);
+    }
+    pub fn pcid_enabled(&self) -> bool {
+        self.read::<fields::PCIDE>()
+    }
+    /// 要使能 pcid 必须满足下面两个条件：
+    ///
+    /// 1. EFER 寄存器中的 LMA 使能，即长模式已经被激活，
+    ///     否则返回错误 `ArchError::LongModeInactivated`
+    /// 2. 处理器支持 PCID 特性，即 `CPUID.Fn0x1_ecx[17] = 1`，
+    ///     否则返回错误：`ArchError::PcidIsNotSupported`
+    ///
+    /// 这两个条件会在函数内部通过传入的参数 efer_buffer 和 std_feature 来检查。
+    pub fn enable_pcid(
+        &mut self,
+        efer_buffer: &EferBuffer,
+        std_feature: &StdFeature,
+    ) -> Result<&mut Self, ArchError> {
+        if !efer_buffer.long_mode_activated() {
+            return Err(ArchError::LongModeInactivated);
+        }
+        if !std_feature.support_pcid() {
+            return Err(ArchError::PcidIsNotSupported);
+        }
+        Ok(self.write::<fields::PCIDE>(true))
     }
 }
 
