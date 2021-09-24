@@ -13,21 +13,18 @@ use crate::mem::segment::{cs::Cs, selector::Privilege};
 pub struct Cr0 {
     phantom: PhantomData<usize>,
 }
-
+static mut CR0_INSTANCE: Option<Cr0> = Some(Cr0 {
+    phantom: PhantomData,
+});
 impl Cr0 {
     pub fn inst() -> Option<Self> {
-        if Cs::buffer().selector.rpl() == Privilege::RPL0 {
-            Some(Self {
-                phantom: PhantomData,
-            })
-        } else {
-            None
+        if Cs::buffer().selector.rpl() != Privilege::RPL0 {
+            return None;
         }
+        unsafe { CR0_INSTANCE.take() }
     }
-    pub(crate) unsafe fn inst_uncheck() -> Self {
-        Self {
-            phantom: PhantomData,
-        }
+    pub(crate) unsafe fn inst_uncheck() -> Option<Self> {
+        CR0_INSTANCE.take()
     }
     #[inline]
     pub fn buffer(&self) -> Cr0Buffer {

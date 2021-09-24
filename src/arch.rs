@@ -18,7 +18,6 @@ pub struct Arch {
     pub cr0: Cr0,
     pub cr2: Cr2,
     pub cr3: Cr3,
-    pub cr4: Cr4,
     #[cfg(target_arch = "x86_64")]
     pub cr8: Cr8,
 }
@@ -36,10 +35,9 @@ impl Arch {
         }
         unsafe {
             Some(Self {
-                cr0: Cr0::inst_uncheck(),
+                cr0: Cr0::inst_uncheck()?,
                 cr2: Cr2::inst_uncheck(),
                 cr3: Cr3::inst_uncheck(),
-                cr4: Cr4::inst_uncheck(),
                 #[cfg(target_arch = "x86_64")]
                 cr8: Cr8::inst_uncheck(),
             })
@@ -49,7 +47,7 @@ impl Arch {
         let cpuid = Cpuid::inst()?;
         let std_feature = cpuid.std_feature();
         let efer = Efer::inst(&std_feature)?;
-        let cr4 = self.cr4.clone(); // Cr4 中的大部分字段读写均需要参考 std_feature 或通过 Cpuid 来查询
+        let cr4 = Cr4::inst()?; // Cr4 中的大部分字段读写均需要参考 std_feature 或通过 Cpuid 来查询
 
         Some(ArchExtension {
             std_feature,

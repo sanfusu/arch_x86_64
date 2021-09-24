@@ -16,19 +16,17 @@ pub struct ArchExtension {
 impl ArchExtension {
     pub fn pcid_extension(&self) -> Option<PcidExtension> {
         if self.efer.buffer().long_mode_activated() && self.std_feature.support_pcid() {
-            Some(PcidExtension {
-                cr4: self.cr4.clone(),
-            })
+            Some(PcidExtension { cr4: &self.cr4 })
         } else {
             None
         }
     }
 }
 
-pub struct PcidExtension {
-    cr4: Cr4,
+pub struct PcidExtension<'a> {
+    cr4: &'a Cr4,
 }
-impl PcidExtension {
+impl<'a> PcidExtension<'a> {
     pub fn disable(&mut self) {
         unsafe {
             // disable 和 enable 的安全性均由 ArchExtension::pcid_extension 函数保证

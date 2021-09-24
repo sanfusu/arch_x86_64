@@ -5,7 +5,6 @@ use register::{RegisterBufferReader, RegisterBufferWriter};
 use crate::mem::segment::{cs::Cs, selector::Privilege};
 
 /// Cr4 寄存器除 PCE 位之外，其余 bit 使能前均可以使用 CPUID 指令来判断是否支持该特性。
-#[derive(Clone)]
 pub struct Cr4 {
     phantom: PhantomData<usize>,
 }
@@ -13,19 +12,19 @@ pub struct Cr4Buffer {
     data: usize,
 }
 
+static mut CR4_INSTANCE: Option<Cr4> = Some(Cr4 {
+    phantom: PhantomData,
+});
+
 impl Cr4 {
-    pub(crate) unsafe fn inst_uncheck() -> Self {
-        Self {
-            phantom: PhantomData,
-        }
+    pub unsafe fn inst_uncheck() -> Option<Self> {
+        CR4_INSTANCE.take()
     }
     pub fn inst() -> Option<Self> {
         if Cs::buffer().selector.rpl() != Privilege::PL0 {
             return None;
         }
-        Some(Cr4 {
-            phantom: PhantomData,
-        })
+        unsafe { CR4_INSTANCE.take() }
     }
     #[inline]
     pub fn buffer(&self) -> Cr4Buffer {
