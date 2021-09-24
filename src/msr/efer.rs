@@ -14,11 +14,12 @@ pub struct Efer {
 }
 impl Efer {
     const REG_ADDR: u32 = 0xC000_0080;
-    pub fn inst(feature: &StdFeature) -> Option<Self> {
-        Msr::inst(feature).map(|msr| Self { msr })
+    pub fn inst(std_feature: &StdFeature) -> Option<Self> {
+        // Msr::inst 函数中已经检查了特权情况
+        Msr::inst(std_feature).map(|msr| Self { msr })
     }
     #[inline]
-    pub unsafe fn buffer(&self) -> EferBuffer {
+    pub fn buffer(&self) -> EferBuffer {
         EferBuffer {
             data: self.msr.read(Self::REG_ADDR) as u32,
             msr: self.msr,
@@ -64,7 +65,7 @@ pub mod fields {
             ///
             /// 注意：该 bit 一般由处理器修改，系统软件虽然可修改，
             /// 但如果值和硬件结果不一致，则会导致 #GP 异常，所以这里认为其是只读位。
-            pub LMA     [10, ro, bool],
+            pub(super) LMA     [10, ro, bool],
             /// long mode 使能位（仅仅是有能力激活 long mode），
             /// 只有分页使能后才会真正的激活 long mode。
             ///

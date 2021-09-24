@@ -14,6 +14,7 @@ pub struct Msr {
 }
 impl Msr {
     pub fn inst(std_feature: &StdFeature) -> Option<Self> {
+        // StdFeature 为只读缓存，可以作为入参的判断依据
         if Cs::buffer().selector.rpl() != Privilege::PL0 && !std_feature.support_msr() {
             return None;
         }

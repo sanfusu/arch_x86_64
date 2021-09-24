@@ -19,11 +19,12 @@ pub struct Cpuid {
 impl Cpuid {
     /// 如果不支持 cpuid 指令，则返回 None，否则返回 Some。
     ///
-    /// ⚠️ 在实模式和 virtual-8086 模式下无法通过本函数来获取 Cpuid 指令实例，并且可能会导致异常
-    /// （函数内使用了 popf 指令，virtual-8086 模式下可能会导致异常，
+    /// ~⚠️ 在实模式和 virtual-8086 模式下无法通过本函数来获取 Cpuid 指令实例，并且可能会导致异常
+    /// （函数内使用了 popf 指令，virtual-8086 模式下可能会导致异常，~
+    /// 不支持实模式和虚拟 8086
     /// 详见 [`Flags::buffer`](crate::cr::flags::Flags::buffer)。
     #[inline]
-    pub unsafe fn inst() -> Option<Self> {
+    pub fn inst() -> Option<Self> {
         // flags 寄存器所有可编程的 bit 位初始值均为 0；
         // 所以只要能置 1，或者其值已经为 1，均表明可以修改。
         #[cfg(target_arch = "x86")]
@@ -109,7 +110,7 @@ mod test {
 
     #[test]
     fn feature_test() {
-        if let Some(cpuid) = unsafe { Cpuid::inst() } {
+        if let Some(cpuid) = Cpuid::inst() {
             println!("{:#}", cpuid.std_feature());
         }
     }

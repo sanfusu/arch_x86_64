@@ -1,5 +1,7 @@
 use core::marker::PhantomData;
 
+use super::cr4::Cr4;
+
 pub struct Cr3 {
     phatom: PhantomData<usize>,
 }
@@ -39,8 +41,8 @@ impl Cr3Buffer {
     pub unsafe fn into_pcid_uncheck(self) -> Cr3BufferPcid {
         Cr3BufferPcid { data: self.data }
     }
-    pub fn into_pcid(self, cr4_buffer: &super::cr4::Cr4Buffer) -> Option<Cr3BufferPcid> {
-        if cr4_buffer.pcid_enabled() {
+    pub fn into_pcid(self, cr4: &Cr4) -> Option<Cr3BufferPcid> {
+        if cr4.buffer().pcid_enabled() {
             Some(Cr3BufferPcid { data: self.data })
         } else {
             None

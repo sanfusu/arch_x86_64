@@ -2,11 +2,10 @@ use core::marker::PhantomData;
 
 use register::{RegisterBufferReader, RegisterBufferWriter};
 
-use crate::{cpuid::feature::StdFeature, msr::efer::EferBuffer};
-
-use crate::ArchError;
+use crate::mem::segment::{cs::Cs, selector::Privilege};
 
 /// Cr4 寄存器除 PCE 位之外，其余 bit 使能前均可以使用 CPUID 指令来判断是否支持该特性。
+#[derive(Clone)]
 pub struct Cr4 {
     phantom: PhantomData<usize>,
 }
@@ -20,10 +19,21 @@ impl Cr4 {
             phantom: PhantomData,
         }
     }
+    pub fn inst() -> Option<Self> {
+        if Cs::buffer().selector.rpl() != Privilege::PL0 {
+            return None;
+        }
+        Some(Cr4 {
+            phantom: PhantomData,
+        })
+    }
     #[inline]
-    pub unsafe fn buffer() -> Cr4Buffer {
+    pub fn buffer(&self) -> Cr4Buffer {
         let mut x;
-        asm!("mov {}, cr4", out(reg) x);
+        unsafe {
+            // 指令执行的安全性以由 inst 实例化检查
+            asm!("mov {}, cr4", out(reg) x);
+        }
         Cr4Buffer { data: x }
     }
 }
@@ -46,23 +56,10 @@ impl Cr4Buffer {
     ///     否则返回错误：`ArchError::PcidIsNotSupported`
     ///
     /// 这两个条件会在函数内部通过传入的参数 efer_buffer 和 std_feature 来检查。
-    pub fn enable_pcid(
-        &mut self,
-        efer_buffer: &EferBuffer,
-        std_feature: &StdFeature,
-    ) -> Result<&mut Self, ArchError> {
-        if !efer_buffer.long_mode_activated() {
-            return Err(ArchError::LongModeInactivated);
-        }
-        if !std_feature.support_pcid() {
-            return Err(ArchError::PcidIsNotSupported);
-        }
-        Ok(self.write::<fields::PCIDE>(true))
-    }
-    pub fn enable_pcid_uncheck(&mut self) -> &mut Self {
+    pub unsafe fn enable_pcid_uncheck(&mut self) -> &mut Self {
         self.write::<fields::PCIDE>(true)
     }
-    pub fn disable_pcid(&mut self) -> &mut Self {
+    pub unsafe fn disable_pcid_uncheck(&mut self) -> &mut Self {
         self.write::<fields::PCIDE>(false)
     }
 }
@@ -77,7 +74,7 @@ pub mod fields {
             pub SMAP        [21, rw, bool],
             pub SMEP        [20, rw, bool],
             pub OSXSAVE     [18, rw, bool],
-            pub(super) PCIDE[17, rw, bool],
+            pub(crate) PCIDE[17, rw, bool],
             pub FSGSBASE    [16, rw, bool],
             pub UMIP        [11, rw, bool],
             pub OSXMMEXCPT  [10, rw, bool],

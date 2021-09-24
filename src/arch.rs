@@ -1,10 +1,16 @@
+pub mod extension;
+
 #[cfg(target_arch = "x86_64")]
 use crate::cr::cr8::Cr8;
 
 use crate::{
+    cpuid::Cpuid,
     cr::{cr0::Cr0, cr2::Cr2, cr3::Cr3, cr4::Cr4},
     mem::segment::{cs::Cs, selector::Privilege},
+    msr::efer::Efer,
 };
+
+use self::extension::ArchExtension;
 
 // 包含所有可拥有的寄存器实例，这些寄存器实例可用于读写寄存器。
 // 虽然包含大量的寄存器实例，但实际上并不占用空间。
@@ -39,12 +45,27 @@ impl Arch {
             })
         }
     }
+    pub fn extension(&self) -> Option<ArchExtension> {
+        let cpuid = Cpuid::inst()?;
+        let std_feature = cpuid.std_feature();
+        let efer = Efer::inst(&std_feature)?;
+        let cr4 = self.cr4.clone(); // Cr4 中的大部分字段读写均需要参考 std_feature 或通过 Cpuid 来查询
+
+        Some(ArchExtension {
+            std_feature,
+            cpuid,
+            efer,
+            cr4,
+        })
+    }
 }
 
 #[cfg(test)]
 mod test {
     use core::mem::size_of;
     use std::println;
+
+    use crate::arch::extension::ArchExtension;
 
     use super::Arch;
     pub struct AA {
@@ -55,5 +76,6 @@ mod test {
     #[test]
     pub fn size() {
         println!("{}", size_of::<AA>());
+        println!("{}", size_of::<ArchExtension>());
     }
 }
