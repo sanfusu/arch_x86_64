@@ -1,6 +1,8 @@
 #![feature(asm)]
 #![no_std]
 
+use register::RegisterBufferReader;
+
 #[cfg(test)]
 extern crate std;
 
@@ -74,4 +76,30 @@ pub enum ArchError {
     LongModeInactivated,
     PcidIsNotSupported,
     PcidDisabled,
+}
+
+/// 只读缓冲区，只能从寄存器直接生成，而不能从原始可读写缓冲区。
+/// 主要用做部分函数的输入参数，这些函数利用缓冲区来判断寄存器中的内容，而非直接从寄存器中读取，
+///
+/// 使用 Ro<T> 可以防止寄存器的内容被修改。
+pub struct Ro<T: RegisterBufferReader> {
+    pub(crate) rw_buffer: T,
+}
+impl<T: RegisterBufferReader> Ro<T> {
+    pub fn read<Field: bits::field::Field<T> + bits::field::FieldReader<T>>(
+        &self,
+    ) -> Field::ValueType {
+        Field::read(&self.rw_buffer)
+    }
+    pub fn output<Field: bits::field::Field<T> + bits::field::FieldReader<T>>(
+        &self,
+        out: &mut Field::ValueType,
+    ) -> &Self {
+        *out = Field::read(&self.rw_buffer);
+        self
+    }
+    /// 转换为可读写缓冲区
+    pub fn into_rw(self) -> T {
+        self.rw_buffer
+    }
 }

@@ -1,6 +1,9 @@
 use core::marker::PhantomData;
 
-use crate::mem::segment::{cs::Cs, selector::Privilege};
+use crate::{
+    mem::segment::{cs::Cs, selector::Privilege},
+    Ro,
+};
 
 /// CR0 控制寄存器；
 ///
@@ -27,15 +30,21 @@ impl Cr0 {
         CR0_INSTANCE.take()
     }
     #[inline]
-    pub fn buffer(&self) -> Cr0Buffer {
+    fn rw_buffer(&self) -> Cr0Buffer {
         let mut x;
         unsafe {
             asm!("mov {}, cr0", out(reg) x);
         }
         Cr0Buffer { data: x }
     }
+    pub fn ro_buffer(&self) -> Ro<Cr0Buffer> {
+        Ro {
+            rw_buffer: self.rw_buffer(),
+        }
+    }
 }
 
+/// 可读写的缓冲区，只能通过 Ro<Cr0Buffer>::into_rw() 来获取。
 pub struct Cr0Buffer {
     data: usize,
 }
@@ -49,6 +58,7 @@ impl Cr0Buffer {
         }
     }
 }
+
 impl_reg_buffer_trait!(Cr0Buffer);
 
 pub mod fields {
@@ -136,6 +146,22 @@ pub mod fields {
             /// 保护模式使能位，写 true 使能，写 false 禁用。
             /// 处理器运行在保护模式时，段保护机制会被使能。
             pub PE [0,  rw, bool]
+        }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use register::RegisterBufferWriter;
+
+    use crate::cr::cr0::{fields, Cr0};
+
+    #[test]
+    #[ignore]
+    pub fn cr0_instance() {
+        let cr0_ro = Cr0::inst().unwrap().ro_buffer();
+        if cr0_ro.read::<fields::AM>() {
+            cr0_ro.into_rw().write::<fields::AM>(false).flush();
         }
     }
 }

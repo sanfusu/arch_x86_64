@@ -57,23 +57,3 @@ impl Arch {
         })
     }
 }
-
-#[cfg(test)]
-mod test {
-    use core::mem::size_of;
-    use std::println;
-
-    use crate::arch::extension::ArchExtension;
-
-    use super::Arch;
-    pub struct AA {
-        pub test: Option<Arch>,
-        pub test2: Option<Arch>,
-        pub test1: Option<Arch>,
-    }
-    #[test]
-    pub fn size() {
-        println!("{}", size_of::<AA>());
-        println!("{}", size_of::<ArchExtension>());
-    }
-}
