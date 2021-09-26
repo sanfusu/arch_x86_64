@@ -46,7 +46,7 @@ impl Cr0 {
 impl Drop for Cr0 {
     fn drop(&mut self) {
         unsafe {
-            CR0_INSTANCE = Some(Cr0 {
+            CR0_INSTANCE.replace(Cr0 {
                 phantom: PhantomData,
             });
         }

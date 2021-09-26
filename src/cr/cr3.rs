@@ -1,25 +1,47 @@
+#[cfg(target_arch = "x86_64")]
+mod pcid;
+#[cfg(target_arch = "x86_64")]
+pub use pcid::Cr3BufferPcid;
+
 use core::marker::PhantomData;
 
-use super::cr4::Cr4;
+use register::RegisterBufferFlush;
+
+use crate::{msr::efer::EferBuffer, Clean};
+
+use super::cr4::Cr4Buffer;
 
 pub struct Cr3 {
     phatom: PhantomData<usize>,
 }
-impl Cr3 {
-    pub(crate) unsafe fn inst_uncheck() -> Self {
-        Self {
-            phatom: PhantomData,
+
+static mut CR3_INSTANCE: Option<Cr3> = Some(Cr3 {
+    phatom: PhantomData,
+});
+
+impl Drop for Cr3 {
+    fn drop(&mut self) {
+        unsafe {
+            CR3_INSTANCE.replace(Cr3 {
+                phatom: PhantomData,
+            });
         }
+    }
+}
+
+impl Cr3 {
+    pub(crate) unsafe fn inst_uncheck() -> Option<Self> {
+        CR3_INSTANCE.take()
     }
     /// + legacy 模式下 Non-Pae 分页下的 CR3 寄存器读
     /// + Long 模式下 `CR4.PCIDE = 0` 时的 CR3 寄存器读
     #[inline]
-    pub fn buffer(&self) -> Cr3Buffer {
-        let mut x;
+    pub fn buffer(&self) -> Option<Clean<Cr3Buffer>> {
+        let mut raw_buffer = unsafe { CR3_BUFFER_INSTANCE.take()? };
         unsafe {
-            asm!("mov {}, cr3", out(reg) x);
+            asm!("mov {}, cr3", out(reg) raw_buffer.data);
         }
-        Cr3Buffer { data: x }
+        Some(Clean { raw_buffer })
     }
 }
 
@@ -34,53 +56,57 @@ impl Cr3Buffer {
         }
     }
 }
-#[cfg(target_arch = "x86_64")]
-impl Cr3Buffer {
-    /// CR4.PCIDE = 1 时，将 Cr3Buffer 转换为 Cr3BufferPcid，这样就可以访问 pcid bit 位了。
+
+static mut CR3_BUFFER_INSTANCE: Option<Cr3Buffer> = Some(Cr3Buffer { data: 0 });
+
+impl RegisterBufferFlush for Cr3Buffer {
+    // @todo: 所有字段修改均可确保安全后，将 fields 中的字段可见域改为 pub(super)，然后移除 unsafe 关键字。
     #[inline]
-    pub unsafe fn into_pcid_uncheck(self) -> Cr3BufferPcid {
-        Cr3BufferPcid { data: self.data }
+    fn flush(&mut self) {
+        unsafe {
+            asm!("mov cr3, {}", in(reg) self.data);
+        }
     }
-    pub fn into_pcid(self, cr4: &Cr4) -> Option<Cr3BufferPcid> {
-        if cr4.buffer().pcid_enabled() {
-            Some(Cr3BufferPcid { data: self.data })
+}
+impl Drop for Cr3Buffer {
+    fn drop(&mut self) {
+        unsafe {
+            CR3_BUFFER_INSTANCE.replace(Cr3Buffer { data: 0 });
+        }
+    }
+}
+
+#[cfg(target_arch = "x86_64")]
+impl Clean<Cr3Buffer> {
+    /// 1. 判断处理器是否支持 pcid，
+    /// 2. 判断 pcid 是否已经使能，
+    #[inline]
+    pub unsafe fn into_pcid_uncheck(self) -> Clean<Cr3BufferPcid> {
+        Clean {
+            raw_buffer: Cr3BufferPcid {
+                buffer: self.raw_buffer,
+            },
+        }
+    }
+    #[inline]
+    pub fn into_pcid(
+        self,
+        efer_buffer: &Clean<EferBuffer>,
+        cr4_buffer: &Clean<Cr4Buffer>,
+    ) -> Option<Clean<Cr3BufferPcid>> {
+        if efer_buffer.long_mode_activated() && unsafe { cr4_buffer.pcid_enabled() } {
+            Some(unsafe { self.into_pcid_uncheck() })
         } else {
             None
         }
     }
 }
+
 #[cfg(target_arch = "x86")]
 impl Cr3Buffer {
     /// Legacy-Mode PAE 使能时 Cr3 寄存器读。
     pub unsafe fn into_pae(self) -> Cr3BufferPae {
         Cr3BufferPae { data: self.data }
-    }
-}
-
-#[cfg(target_arch = "x86_64")]
-pub struct Cr3BufferPcid {
-    data: usize,
-}
-#[cfg(target_arch = "x86_64")]
-impl Cr3BufferPcid {
-    // @todo: 所有字段修改均可确保安全后，将 fields 中的字段可见域改为 pub(super)，然后移除 unsafe 关键字。
-    #[inline]
-    pub fn flush(&mut self) {
-        unsafe {
-            asm!("mov cr3, {}", in(reg) self.data);
-        }
-    }
-    /// 用于写 PCID 的辅助函数
-    pub fn set_pcid(&mut self, id: u16) -> &mut Self {
-        use register::RegisterBufferWriter;
-
-        self.write::<fields::PCID>(id)
-    }
-    /// 用于读 pcid 的辅助函数
-    pub fn pcid(&self) -> u16 {
-        use register::RegisterBufferReader;
-
-        self.read::<fields::PCID>()
     }
 }
 
@@ -101,10 +127,6 @@ impl Cr3BufferPae {
 impl_reg_buffer_trait! {
     #[cfg(target_arch="x86")]
     Cr3BufferPae;
-
-    #[cfg(target_arch="x86_64")]
-    Cr3BufferPcid;
-
     Cr3Buffer;
 }
 
@@ -151,25 +173,20 @@ pub mod fields {
     #[cfg(target_arch = "x86_64")]
     bits::fields! {
         super::Cr3Buffer [data] {
-            TBA [12..=51, rw, usize]
+            PCID    [00..=11, rw, u16],
+            TBA     [12..=51, rw, usize]
         }
     }
     #[cfg(target_arch = "x86")]
     bits::fields! {
         super::Cr3Buffer [data] {
-            TBA [12..=31,  rw, usize]
+            TBA     [12..=31,  rw, usize]
         }
     }
     #[cfg(target_arch = "x86")]
     bits::fields! {
         super::Cr3BufferPae [data] {
             TBA [5..=31, rw, usize]
-        }
-    }
-    #[cfg(target_arch = "x86_64")]
-    bits::fields! {
-        super::Cr3BufferPcid [data] {
-            PCID    [00..=11, rw, u16]
         }
     }
     bits::fields! {

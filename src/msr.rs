@@ -10,7 +10,7 @@ pub mod syscfg;
 
 #[derive(Clone, Copy)]
 pub struct Msr {
-    phatom: PhantomData<usize>,
+    pub(crate) phatom: PhantomData<usize>,
 }
 impl Msr {
     pub fn inst(std_feature: &StdFeature) -> Option<Self> {

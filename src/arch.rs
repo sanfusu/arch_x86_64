@@ -37,7 +37,7 @@ impl Arch {
             Some(Self {
                 cr0: Cr0::inst_uncheck()?,
                 cr2: Cr2::inst_uncheck(),
-                cr3: Cr3::inst_uncheck(),
+                cr3: Cr3::inst_uncheck()?,
                 #[cfg(target_arch = "x86_64")]
                 cr8: Cr8::inst_uncheck(),
             })

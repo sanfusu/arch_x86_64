@@ -1,21 +1,30 @@
 use core::marker::PhantomData;
 
-use register::{RegisterBufferReader, RegisterBufferWriter};
+use register::RegisterBufferFlush;
 
-use crate::mem::segment::{cs::Cs, selector::Privilege};
+use crate::{
+    mem::segment::{cs::Cs, selector::Privilege},
+    Clean, Dirty,
+};
 
 /// Cr4 寄存器除 PCE 位之外，其余 bit 使能前均可以使用 CPUID 指令来判断是否支持该特性。
 pub struct Cr4 {
     phantom: PhantomData<usize>,
-}
-pub struct Cr4Buffer {
-    data: usize,
 }
 
 static mut CR4_INSTANCE: Option<Cr4> = Some(Cr4 {
     phantom: PhantomData,
 });
 
+impl Drop for Cr4 {
+    fn drop(&mut self) {
+        unsafe {
+            CR4_INSTANCE.replace(Cr4 {
+                phantom: PhantomData,
+            });
+        }
+    }
+}
 impl Cr4 {
     pub unsafe fn inst_uncheck() -> Option<Self> {
         CR4_INSTANCE.take()
@@ -27,26 +36,43 @@ impl Cr4 {
         unsafe { CR4_INSTANCE.take() }
     }
     #[inline]
-    pub fn buffer(&self) -> Cr4Buffer {
-        let mut x;
+    pub fn buffer(&self) -> Option<Clean<Cr4Buffer>> {
+        let mut raw_buffer = unsafe { CR4_BUFFER_INSTANCE.take()? };
         unsafe {
             // 指令执行的安全性以由 inst 实例化检查
-            asm!("mov {}, cr4", out(reg) x);
+            asm!("mov {}, cr4", out(reg) raw_buffer.data);
         }
-        Cr4Buffer { data: x }
+        Some(Clean { raw_buffer })
     }
 }
-impl Cr4Buffer {
-    // @todo: 所有字段修改均可确保安全后，将 fields 中的字段可见域改为 pub(super)，然后移除 unsafe 关键字。
-    #[inline]
-    pub fn flush(&mut self) {
+
+pub struct Cr4Buffer {
+    data: usize,
+}
+
+static mut CR4_BUFFER_INSTANCE: Option<Cr4Buffer> = Some(Cr4Buffer { data: 0 });
+
+impl Drop for Cr4Buffer {
+    fn drop(&mut self) {
+        unsafe {
+            CR4_BUFFER_INSTANCE.replace(Cr4Buffer { data: 0 });
+        }
+    }
+}
+impl RegisterBufferFlush for Cr4Buffer {
+    fn flush(&mut self) {
         unsafe {
             asm!("mov cr4, {}", in(reg) self.data);
         }
     }
-    pub fn pcid_enabled(&self) -> bool {
+}
+impl Clean<Cr4Buffer> {
+    /// 首先要确保支持 pcid 特性，否则查询结果并不可靠。
+    pub unsafe fn pcid_enabled(&self) -> bool {
         self.read::<fields::PCIDE>()
     }
+}
+impl Dirty<Cr4Buffer> {
     /// 要使能 pcid 必须满足下面两个条件：
     ///
     /// 1. EFER 寄存器中的 LMA 使能，即长模式已经被激活，
@@ -55,10 +81,10 @@ impl Cr4Buffer {
     ///     否则返回错误：`ArchError::PcidIsNotSupported`
     ///
     /// 这两个条件会在函数内部通过传入的参数 efer_buffer 和 std_feature 来检查。
-    pub unsafe fn enable_pcid_uncheck(&mut self) -> &mut Self {
+    pub unsafe fn enable_pcid_uncheck(self) -> Self {
         self.write::<fields::PCIDE>(true)
     }
-    pub unsafe fn disable_pcid_uncheck(&mut self) -> &mut Self {
+    pub unsafe fn disable_pcid_uncheck(self) -> Self {
         self.write::<fields::PCIDE>(false)
     }
 }

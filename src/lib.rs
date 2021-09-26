@@ -107,25 +107,17 @@ impl<T: RegisterBufferReader + RegisterBufferWriter + RegisterBufferFlush> Clean
             raw_buffer: self.raw_buffer,
         }
     }
+    pub fn asume_dirty(self) -> Dirty<T> {
+        Dirty {
+            raw_buffer: self.raw_buffer,
+        }
+    }
 }
 
 pub struct Dirty<T: RegisterBufferReader + RegisterBufferWriter + RegisterBufferFlush> {
     pub(crate) raw_buffer: T,
 }
 impl<T: RegisterBufferReader + RegisterBufferWriter + RegisterBufferFlush> Dirty<T> {
-    pub fn read<Field: bits::field::Field<T> + bits::field::FieldReader<T>>(
-        &self,
-    ) -> Field::ValueType {
-        Field::read(&self.raw_buffer)
-    }
-    pub fn output<Field: bits::field::Field<T> + bits::field::FieldReader<T>>(
-        &self,
-        out: &mut Field::ValueType,
-    ) -> &Self {
-        *out = Field::read(&self.raw_buffer);
-        self
-    }
-
     #[must_use = "The modified value works after flushed into register"]
     pub fn write<Field>(mut self, value: Field::ValueType) -> Self
     where
