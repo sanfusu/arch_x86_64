@@ -18,9 +18,11 @@ use crate::{
 pub struct Cr0 {
     phantom: PhantomData<usize>,
 }
+
 static mut CR0_INSTANCE: Option<Cr0> = Some(Cr0 {
     phantom: PhantomData,
 });
+
 impl Cr0 {
     pub fn inst() -> Option<Self> {
         if Cs::buffer().selector.rpl() != Privilege::RPL0 {
@@ -32,19 +34,15 @@ impl Cr0 {
         CR0_INSTANCE.take()
     }
     #[inline]
-    fn raw_buffer(&self) -> Option<Cr0Buffer> {
+    pub fn buffer(&self) -> Option<Clean<Cr0Buffer>> {
         let mut x = unsafe { CR0BUFFER_INSTANCE.take()? };
         unsafe {
             asm!("mov {}, cr0", out(reg) x.data);
         }
-        Some(x)
-    }
-    pub fn buffer(&self) -> Option<Clean<Cr0Buffer>> {
-        Some(Clean {
-            raw_buffer: self.raw_buffer()?,
-        })
+        Some(Clean { raw_buffer: x })
     }
 }
+
 impl Drop for Cr0 {
     fn drop(&mut self) {
         unsafe {
