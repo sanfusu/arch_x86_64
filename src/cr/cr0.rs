@@ -1,8 +1,10 @@
 use core::marker::PhantomData;
 
+use register::RegisterBufferFlush;
+
 use crate::{
     mem::segment::{cs::Cs, selector::Privilege},
-    Ro,
+    Clean,
 };
 
 /// CR0 控制寄存器；
@@ -30,29 +32,44 @@ impl Cr0 {
         CR0_INSTANCE.take()
     }
     #[inline]
-    fn rw_buffer(&self) -> Cr0Buffer {
-        let mut x;
+    fn raw_buffer(&self) -> Option<Cr0Buffer> {
+        let mut x = unsafe { CR0BUFFER_INSTANCE.take()? };
         unsafe {
-            asm!("mov {}, cr0", out(reg) x);
+            asm!("mov {}, cr0", out(reg) x.data);
         }
-        Cr0Buffer { data: x }
+        Some(x)
     }
-    pub fn ro_buffer(&self) -> Ro<Cr0Buffer> {
-        Ro {
-            rw_buffer: self.rw_buffer(),
+    pub fn buffer(&self) -> Option<Clean<Cr0Buffer>> {
+        Some(Clean {
+            raw_buffer: self.raw_buffer()?,
+        })
+    }
+}
+impl Drop for Cr0 {
+    fn drop(&mut self) {
+        unsafe {
+            CR0_INSTANCE = Some(Cr0 {
+                phantom: PhantomData,
+            });
         }
     }
 }
 
-/// 可读写的缓冲区，只能通过 Ro<Cr0Buffer>::into_rw() 来获取。
 pub struct Cr0Buffer {
     data: usize,
 }
+static mut CR0BUFFER_INSTANCE: Option<Cr0Buffer> = None;
 
-/// 用于缓存 CR0 控制寄存器；
-impl Cr0Buffer {
-    #[inline]
-    pub fn flush(&mut self) {
+impl Drop for Cr0Buffer {
+    fn drop(&mut self) {
+        // self.data 中的值是不可信任的，所以这里设为 0。
+        // 在次执行 Cr0::buffer 时，会从寄存器中在次读出数值。
+        unsafe { CR0BUFFER_INSTANCE = Some(Cr0Buffer { data: 0 }) }
+    }
+}
+
+impl RegisterBufferFlush for Cr0Buffer {
+    fn flush(&mut self) {
         unsafe {
             asm!("mov cr0, {}", in(reg) self.data);
         }
@@ -152,16 +169,19 @@ pub mod fields {
 
 #[cfg(test)]
 mod test {
-    use register::RegisterBufferWriter;
 
     use crate::cr::cr0::{fields, Cr0};
 
     #[test]
     #[ignore]
     pub fn cr0_instance() {
-        let cr0_ro = Cr0::inst().unwrap().ro_buffer();
-        if cr0_ro.read::<fields::AM>() {
-            cr0_ro.into_rw().write::<fields::AM>(false).flush();
+        {
+            let cr0_buffer_clean = Cr0::inst().unwrap().buffer().unwrap();
+            if cr0_buffer_clean.read::<fields::AM>() {
+                let cr0_buffer_dirty = cr0_buffer_clean.write::<fields::AM>(false);
+                cr0_buffer_dirty.flush();
+            }
         }
+        let _cr0_ro1 = Cr0::inst().unwrap().buffer().unwrap();
     }
 }
