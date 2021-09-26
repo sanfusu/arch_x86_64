@@ -1,7 +1,7 @@
 #![feature(asm)]
 #![no_std]
 
-use register::RegisterBufferReader;
+use register::{RegisterBufferFlush, RegisterBufferReader, RegisterBufferWriter};
 
 #[cfg(test)]
 extern crate std;
@@ -78,30 +78,67 @@ pub enum ArchError {
     PcidDisabled,
 }
 
-/// 只读缓冲区，只能从寄存器直接生成，而不能从原始可读写缓冲区转换。
-/// 主要用做部分函数的输入参数，这些函数利用缓冲区来判断寄存器中的内容，而非直接从寄存器中读取，
-///
-/// 使用 Ro<T> 可以防止寄存器的内容被修改。
-/// rust 自身语法只能将入参限制为 mut 变量，而无法限制其为非 mut 变量。
-/// 也就是说 mut var，也可以作为非 mut 变量传递给函数。
-pub struct Ro<T: RegisterBufferReader> {
-    pub(crate) rw_buffer: T,
+pub struct Clean<T: RegisterBufferReader + RegisterBufferWriter + RegisterBufferFlush> {
+    pub(crate) raw_buffer: T,
 }
-impl<T: RegisterBufferReader> Ro<T> {
+
+impl<T: RegisterBufferReader + RegisterBufferWriter + RegisterBufferFlush> Clean<T> {
     pub fn read<Field: bits::field::Field<T> + bits::field::FieldReader<T>>(
         &self,
     ) -> Field::ValueType {
-        Field::read(&self.rw_buffer)
+        Field::read(&self.raw_buffer)
     }
     pub fn output<Field: bits::field::Field<T> + bits::field::FieldReader<T>>(
         &self,
         out: &mut Field::ValueType,
     ) -> &Self {
-        *out = Field::read(&self.rw_buffer);
+        *out = Field::read(&self.raw_buffer);
         self
     }
-    /// 转换为可读写缓冲区
-    pub fn into_rw(self) -> T {
-        self.rw_buffer
+
+    #[must_use = "The modified value works after flushed into register"]
+    pub fn write<Field>(mut self, value: Field::ValueType) -> Dirty<T>
+    where
+        Field: bits::field::Field<T> + bits::field::FieldWriter<T>,
+        Self: Sized,
+    {
+        Field::write(&mut self.raw_buffer, value);
+        Dirty {
+            raw_buffer: self.raw_buffer,
+        }
+    }
+}
+
+pub struct Dirty<T: RegisterBufferReader + RegisterBufferWriter + RegisterBufferFlush> {
+    pub(crate) raw_buffer: T,
+}
+impl<T: RegisterBufferReader + RegisterBufferWriter + RegisterBufferFlush> Dirty<T> {
+    pub fn read<Field: bits::field::Field<T> + bits::field::FieldReader<T>>(
+        &self,
+    ) -> Field::ValueType {
+        Field::read(&self.raw_buffer)
+    }
+    pub fn output<Field: bits::field::Field<T> + bits::field::FieldReader<T>>(
+        &self,
+        out: &mut Field::ValueType,
+    ) -> &Self {
+        *out = Field::read(&self.raw_buffer);
+        self
+    }
+
+    #[must_use = "The modified value works after flushed into register"]
+    pub fn write<Field>(&mut self, value: Field::ValueType) -> &mut Self
+    where
+        Field: bits::field::Field<T> + bits::field::FieldWriter<T>,
+        Self: Sized,
+    {
+        Field::write(&mut self.raw_buffer, value);
+        self
+    }
+    pub fn flush(mut self) -> Clean<T> {
+        T::flush(&mut self.raw_buffer);
+        Clean {
+            raw_buffer: self.raw_buffer,
+        }
     }
 }
