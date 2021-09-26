@@ -127,7 +127,7 @@ impl<T: RegisterBufferReader + RegisterBufferWriter + RegisterBufferFlush> Dirty
     }
 
     #[must_use = "The modified value works after flushed into register"]
-    pub fn write<Field>(&mut self, value: Field::ValueType) -> &mut Self
+    pub fn write<Field>(mut self, value: Field::ValueType) -> Self
     where
         Field: bits::field::Field<T> + bits::field::FieldWriter<T>,
         Self: Sized,

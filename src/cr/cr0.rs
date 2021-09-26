@@ -177,8 +177,10 @@ mod test {
         {
             let cr0_buffer_clean = Cr0::inst().unwrap().buffer().unwrap();
             if cr0_buffer_clean.read::<fields::AM>() {
-                let cr0_buffer_dirty = cr0_buffer_clean.write::<fields::AM>(false);
-                cr0_buffer_dirty.flush();
+                let _cr0_buffer_dirty = cr0_buffer_clean
+                    .write::<fields::AM>(false)
+                    .write::<fields::CD>(true)
+                    .flush();
             }
         }
         let _cr0_ro1 = Cr0::inst().unwrap().buffer().unwrap();
