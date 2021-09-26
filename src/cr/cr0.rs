@@ -58,7 +58,8 @@ impl Drop for Cr0 {
 pub struct Cr0Buffer {
     data: usize,
 }
-static mut CR0BUFFER_INSTANCE: Option<Cr0Buffer> = None;
+
+static mut CR0BUFFER_INSTANCE: Option<Cr0Buffer> = Some(Cr0Buffer { data: 0 });
 
 impl Drop for Cr0Buffer {
     fn drop(&mut self) {
