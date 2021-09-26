@@ -84,16 +84,6 @@ pub enum ArchError {
 /// 使用 Ro<T> 可以防止寄存器的内容被修改。
 /// rust 自身语法只能将入参限制为 mut 变量，而无法限制其为非 mut 变量。
 /// 也就是说 mut var，也可以作为非 mut 变量传递给函数。
-///
-/// ```
-/// fn unmut(_: &u16) {}
-/// fn test() {
-///     let mut v = 0;
-///     unmut(&v);
-///     v = 2;
-///     unmut(&v); // 我们希望 v 在传入之前不会被修改，本函数调用之后的修改情况则不管。
-/// }
-/// ```
 pub struct Ro<T: RegisterBufferReader> {
     pub(crate) rw_buffer: T,
 }
