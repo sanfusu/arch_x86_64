@@ -1,10 +1,7 @@
 #![feature(asm)]
 #![no_std]
 
-use core::sync::atomic::{
-    AtomicBool,
-    Ordering::{AcqRel, Acquire},
-};
+use core::sync::atomic::{AtomicBool, Ordering::Relaxed};
 
 use register::{RegisterBufferFlush, RegisterBufferReader, RegisterBufferWriter};
 
@@ -151,14 +148,15 @@ impl ArchMutex {
             flag: AtomicBool::new(true),
         }
     }
+    #[no_mangle]
     pub fn lock(&mut self) -> bool {
         self.flag
-            .compare_exchange(true, false, AcqRel, Acquire)
+            .compare_exchange(true, false, Relaxed, Relaxed)
             .is_ok()
     }
     pub fn unlock(&mut self) -> bool {
         self.flag
-            .compare_exchange(false, true, AcqRel, Acquire)
+            .compare_exchange(false, true, Relaxed, Relaxed)
             .is_ok()
     }
 }
