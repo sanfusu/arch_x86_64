@@ -32,9 +32,9 @@ impl Cpuid {
             use crate::cr::flags::{fields, Flags};
             use register::{RegisterBufferReader, RegisterBufferWriter};
 
-            let mut flags = Flags::buffer();
+            let mut flags = unsafe { Flags::buffer() };
             flags.write::<fields::ID>(true).flush();
-            if Flags::buffer().read::<fields::ID>() {
+            if unsafe { Flags::buffer().read::<fields::ID>() } {
                 Some(Self {
                     phantom: PhantomData,
                 })

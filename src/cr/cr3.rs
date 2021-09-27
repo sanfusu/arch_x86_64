@@ -7,9 +7,7 @@ use core::marker::PhantomData;
 
 use register::RegisterBufferFlush;
 
-use crate::{msr::efer::EferBuffer, Clean};
-
-use super::cr4::Cr4Buffer;
+use crate::Clean;
 
 pub struct Cr3 {
     phatom: PhantomData<usize>,
@@ -91,8 +89,8 @@ impl Clean<Cr3Buffer> {
     #[inline]
     pub fn into_pcid(
         self,
-        efer_buffer: &Clean<EferBuffer>,
-        cr4_buffer: &Clean<Cr4Buffer>,
+        efer_buffer: &Clean<crate::msr::efer::EferBuffer>,
+        cr4_buffer: &Clean<super::cr4::Cr4Buffer>,
     ) -> Option<Clean<Cr3BufferPcid>> {
         if efer_buffer.long_mode_activated() && unsafe { cr4_buffer.pcid_enabled() } {
             Some(unsafe { self.into_pcid_uncheck() })
