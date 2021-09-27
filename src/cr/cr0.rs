@@ -4,7 +4,7 @@ use register::RegisterBufferFlush;
 
 use crate::{
     mem::segment::{cs::Cs, selector::Privilege},
-    Clean,
+    ArchMutex, Clean,
 };
 
 /// CR0 控制寄存器；
@@ -19,19 +19,29 @@ pub struct Cr0 {
     phantom: PhantomData<usize>,
 }
 
-static mut CR0_INSTANCE: Option<Cr0> = Some(Cr0 {
-    phantom: PhantomData,
-});
+static mut CR0_INSTANCE: ArchMutex = ArchMutex::new();
 
 impl Cr0 {
     pub fn inst() -> Option<Self> {
         if Cs::buffer().selector.rpl() != Privilege::RPL0 {
             return None;
         }
-        unsafe { CR0_INSTANCE.take() }
+        if unsafe { CR0_INSTANCE.lock() } {
+            Some(Cr0 {
+                phantom: PhantomData,
+            })
+        } else {
+            None
+        }
     }
     pub(crate) unsafe fn inst_uncheck() -> Option<Self> {
-        CR0_INSTANCE.take()
+        if CR0_INSTANCE.lock() {
+            Some(Cr0 {
+                phantom: PhantomData,
+            })
+        } else {
+            None
+        }
     }
     #[inline]
     pub fn buffer(&self) -> Option<Clean<Cr0Buffer>> {
@@ -46,9 +56,7 @@ impl Cr0 {
 impl Drop for Cr0 {
     fn drop(&mut self) {
         unsafe {
-            CR0_INSTANCE.replace(Cr0 {
-                phantom: PhantomData,
-            });
+            CR0_INSTANCE.unlock();
         }
     }
 }

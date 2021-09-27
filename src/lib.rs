@@ -1,6 +1,11 @@
 #![feature(asm)]
 #![no_std]
 
+use core::sync::atomic::{
+    AtomicBool,
+    Ordering::{AcqRel, Acquire},
+};
+
 use register::{RegisterBufferFlush, RegisterBufferReader, RegisterBufferWriter};
 
 #[cfg(test)]
@@ -132,5 +137,43 @@ impl<T: RegisterBufferReader + RegisterBufferWriter + RegisterBufferFlush> Dirty
         Clean {
             raw_buffer: self.raw_buffer,
         }
+    }
+}
+
+/// 基本的原始锁，没有实现 Drop 自动解锁功能，也不存储任何数据，只有基本 lock 和 unlock 功能。
+pub struct ArchMutex {
+    flag: AtomicBool,
+}
+
+impl ArchMutex {
+    pub const fn new() -> Self {
+        Self {
+            flag: AtomicBool::new(true),
+        }
+    }
+    pub fn lock(&mut self) -> bool {
+        self.flag
+            .compare_exchange(true, false, AcqRel, Acquire)
+            .is_ok()
+    }
+    pub fn unlock(&mut self) -> bool {
+        self.flag
+            .compare_exchange(false, true, AcqRel, Acquire)
+            .is_ok()
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::ArchMutex;
+
+    #[test]
+    #[no_mangle]
+    fn mutex_test() {
+        let mut mutex = ArchMutex::new();
+        assert_eq!(true, mutex.lock());
+        assert_eq!(false, mutex.lock());
+        assert_eq!(true, mutex.unlock());
+        assert_eq!(false, mutex.unlock());
     }
 }
