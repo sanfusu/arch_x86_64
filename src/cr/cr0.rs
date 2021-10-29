@@ -15,14 +15,24 @@ use crate::Clean;
 pub struct Cr0 {
     phantom: PhantomData<usize>,
 }
+
+impl !Send for Cr0 {}
+
+static mut CR0_INST: Option<Cr0> = Some(Cr0 {
+    phantom: PhantomData,
+});
+
 impl Cr0 {
     #[inline]
-    pub fn take() -> Clean<Cr0Buffer> {
+    pub fn take(&self) -> Clean<Cr0Buffer> {
         let mut x = unsafe { CR0BUFFER_INSTANCE.take().unwrap() };
         unsafe {
             asm!("mov {}, cr0", out(reg) x.data);
         }
         Clean::from_raw(x)
+    }
+    pub(crate) fn inst_once() -> Self {
+        unsafe { CR0_INST.take().unwrap() }
     }
 }
 
@@ -150,7 +160,7 @@ mod test {
     #[ignore]
     pub fn cr0_instance() {
         {
-            let cr0_buffer = Cr0::take();
+            let cr0_buffer = Cr0::inst_once().take();
             if cr0_buffer.read::<fields::AM>() {
                 let _cr0_buffer_dirty = cr0_buffer
                     .write::<fields::AM>(false)
@@ -158,6 +168,6 @@ mod test {
                     .flush();
             }
         }
-        let _cr0_ro1 = Cr0::take();
+        let _cr0_ro1 = Cr0::inst_once().take(); // Panic, Cr0 只能实例化一次。
     }
 }
