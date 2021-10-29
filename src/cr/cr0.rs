@@ -2,10 +2,7 @@ use core::marker::PhantomData;
 
 use register::RegisterBufferFlush;
 
-use crate::{
-    mem::segment::{cs::Cs, selector::Privilege},
-    ArchMutex, Clean,
-};
+use crate::Clean;
 
 /// CR0 控制寄存器；
 ///
@@ -18,52 +15,22 @@ use crate::{
 pub struct Cr0 {
     phantom: PhantomData<usize>,
 }
-
-static mut CR0_INSTANCE: ArchMutex = ArchMutex::new();
-
 impl Cr0 {
-    pub fn inst() -> Option<Self> {
-        if Cs::buffer().selector.rpl() != Privilege::RPL0 {
-            return None;
-        }
-        if unsafe { CR0_INSTANCE.lock() } {
-            Some(Cr0 {
-                phantom: PhantomData,
-            })
-        } else {
-            None
-        }
-    }
-    pub(crate) unsafe fn inst_uncheck() -> Option<Self> {
-        if CR0_INSTANCE.lock() {
-            Some(Cr0 {
-                phantom: PhantomData,
-            })
-        } else {
-            None
-        }
-    }
     #[inline]
-    pub fn buffer(&self) -> Option<Clean<Cr0Buffer>> {
-        let mut x = unsafe { CR0BUFFER_INSTANCE.take()? };
+    pub fn take() -> Clean<Cr0Buffer> {
+        let mut x = unsafe { CR0BUFFER_INSTANCE.take().unwrap() };
         unsafe {
             asm!("mov {}, cr0", out(reg) x.data);
         }
-        Some(Clean { raw_buffer: x })
-    }
-}
-
-impl Drop for Cr0 {
-    fn drop(&mut self) {
-        unsafe {
-            CR0_INSTANCE.unlock();
-        }
+        Clean::from_raw(x)
     }
 }
 
 pub struct Cr0Buffer {
     data: usize,
 }
+
+impl !Send for Cr0Buffer {}
 
 static mut CR0BUFFER_INSTANCE: Option<Cr0Buffer> = Some(Cr0Buffer { data: 0 });
 
@@ -183,14 +150,14 @@ mod test {
     #[ignore]
     pub fn cr0_instance() {
         {
-            let cr0_buffer_clean = Cr0::inst().unwrap().buffer().unwrap();
-            if cr0_buffer_clean.read::<fields::AM>() {
-                let _cr0_buffer_dirty = cr0_buffer_clean
+            let cr0_buffer = Cr0::take();
+            if cr0_buffer.read::<fields::AM>() {
+                let _cr0_buffer_dirty = cr0_buffer
                     .write::<fields::AM>(false)
                     .write::<fields::CD>(true)
                     .flush();
             }
         }
-        let _cr0_ro1 = Cr0::inst().unwrap().buffer().unwrap();
+        let _cr0_ro1 = Cr0::take();
     }
 }
